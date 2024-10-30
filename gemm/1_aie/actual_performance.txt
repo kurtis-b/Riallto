@@ -1,28 +1,40 @@
+Input data type: <class 'numpy.uint8'>
+Output data type: <class 'numpy.uint16'>
 Workload: [(1024, 1024), (1024, 1024), (1024, 1024)]
 NPU workload=[(64, 128), (128, 64), (64, 64)]
 Kernel workload=[(64, 128), (128, 64), (64, 64)]
 Kernel configuration=(8, 8, 4)
-Total kernel calculation time (without tiling overhead)=0.7947616577148438
-Total CPU calculation time=1.4694595336914062
+Total NPU calculation time=0.6985549211502076
+Total NPU calculation time + DDR transfer overhead=0.7645861625671386
+Total CPU calculation time=1.669908094406128
 
+Input data type: <class 'ml_dtypes.bfloat16'>
+Output data type: <class 'numpy.float32'>
 Workload: [(1024, 1024), (1024, 1024), (1024, 1024)]
 NPU workload=[(32, 64), (64, 32), (32, 32)]
 Kernel workload=[(32, 64), (64, 32), (32, 32)]
 Kernel configuration=(8, 8, 4)
-Total kernel calculation time (without tiling overhead)=8.088762998580933
-Total CPU calculation time=4.800894021987915
+Total NPU calculation time=6.025694441795349
+Total NPU calculation time + DDR transfer overhead=6.8106327772140505
+Total CPU calculation time=5.67136070728302
 
+Input data type: <class 'numpy.uint8'>
+Output data type: <class 'numpy.uint16'>
 Workload: [(8, 4096), (4096, 4096), (8, 4096)]
 NPU workload=[(8, 128), (128, 64), (8, 64)]
 Kernel workload=[(8, 128), (128, 64), (8, 64)]
 Kernel configuration=(8, 8, 4)
-Total kernel calculation time (without tiling overhead)=0.7680635452270508
-Total CPU calculation time=0.7195820808410645
+Total NPU calculation time=0.764874005317688
+Total NPU calculation time + DDR transfer overhead=0.8718159198760986
+Total CPU calculation time=1.3364547729492187
 
+Input data type: <class 'ml_dtypes.bfloat16'>
+Output data type: <class 'numpy.float32'>
 Workload: [(8, 4096), (4096, 4096), (8, 4096)]
 NPU workload=[(8, 128), (128, 32), (8, 32)]
 Kernel workload=[(8, 128), (128, 32), (8, 32)]
 Kernel configuration=(8, 8, 4)
-Total kernel calculation time (without tiling overhead)=1.102726936340332
-Total CPU calculation time=1.7067081928253174
+Total NPU calculation time=1.5579624891281127
+Total NPU calculation time + DDR transfer overhead=1.839979338645935
+Total CPU calculation time=2.1598861694335936
 

@@ -16,13 +16,13 @@ def partition_matrix(matrix, tile_size):
             swapaxes(1, 2))
     # Flatten the tiled matrix back to the original shape
     return tiled_matrix.reshape(rows, cols)
-    
 
-if __name__ == "__main__":
+
+def execute():
+    num_runs = 10
     performance_file = Path(__file__).parent / "actual_performance.txt"
     with open(performance_file, "w") as f:
         for workload in WORKLOADS:
-            num_runs = 1
             workload_dir = Path(__file__).parent / workload[workloads.DIRECTORY_KEY]
             new_xclbin_name = f"{Mmul_1aie.__name__}_{workload[workloads.FILE_NAME_KEY].split('.mlir')[0]}.xclbin"
             new_seq_name = f"{Mmul_1aie.__name__}_{workload[workloads.FILE_NAME_KEY].split('.mlir')[0]}.seq"
@@ -36,7 +36,7 @@ if __name__ == "__main__":
             c_shape_npu = workload[workloads.NPU_SHAPES_KEY][2]
             inp_dtype = np.uint8 if workload[workloads.DATA_TYPE_INPUT_KEY] == 'uint8' else bfloat16
             out_dtype = np.uint16 if workload[workloads.DATA_TYPE_OUTPUT_KEY] == 'i16' else np.float32
-            # TODO: If I use np.float16, as the dtype for the input buffers, the NPU output will be all 0's
+            # NOTE: If I use np.float16, as the dtype for the input buffers, the NPU output will be all 0's
             input_a = app.allocate(shape=a_shape_npu, dtype=inp_dtype)
             input_b = app.allocate(shape=b_shape_npu, dtype=inp_dtype)
             output_c = app.allocate(shape=c_shape_npu, dtype=out_dtype)
@@ -54,7 +54,8 @@ if __name__ == "__main__":
             b = np.ones(shape=b_shape_workload, dtype=inp_dtype_host)
             a = np.ones(shape=a_shape_workload, dtype=inp_dtype_host)
             c = np.zeros(shape=c_shape_workload, dtype=out_dtype)
-            total_time = 0
+            total_npu_time = 0.0
+            total_npu_time_plus_ddr_transfer = 0.0
             # print(a.shape, b.shape, c.shape)
             # print(a.dtype, b.dtype, c.dtype)
 
@@ -62,7 +63,7 @@ if __name__ == "__main__":
             K = workload[workloads.KERNEL_MMUL_CONFIG_KEY][1]
             N = workload[workloads.KERNEL_MMUL_CONFIG_KEY][2]
             # test = 4
-            for _ in range(num_runs):
+            for run in range(num_runs):
                 c = np.zeros(shape=c_shape_workload, dtype=out_dtype) # Reset output matrix c to zeros
                 expected_output = np.zeros(shape=c_shape_workload, dtype=out_dtype) # Reset expected output matrix to zeros
                 for row_a in range(0, a_shape_workload[0], a_shape_npu[0]):
@@ -72,20 +73,26 @@ if __name__ == "__main__":
                             b_tiled = partition_matrix(b[col_a:col_a+a_shape_npu[1],col_b:col_b+b_shape_npu[1]], (K,N))
                             # a_tiled = a[row_a:row_a+a_shape_npu[0],col_a:col_a+a_shape_npu[1]]
                             # b_tiled = b[col_a:col_a+a_shape_npu[1],col_b:col_b+b_shape_npu[1]]
+                            start = time.time()
                             input_a[:] = a_tiled
                             input_b[:] = b_tiled
                             # Pass input_image buffer to NPU
                             input_a.sync_to_npu()
                             input_b.sync_to_npu()
-                            app._refresh_sequence()
+                            total_npu_time_plus_ddr_transfer = total_npu_time_plus_ddr_transfer + (time.time() - start)
+                            # app._refresh_sequence()
                 
                             # Run app on NPU
                             start = time.time()
                             app.call(input_a, input_b, output_c)
-                            total_time = total_time + (time.time() - start)
+                            diff = time.time() - start
+                            total_npu_time = total_npu_time + diff
+                            total_npu_time_plus_ddr_transfer = total_npu_time_plus_ddr_transfer + diff
                 
                             # Get results from NPU via output_image buffer
+                            start = time.time()
                             output_c.sync_from_npu()
+                            total_npu_time_plus_ddr_transfer = total_npu_time_plus_ddr_transfer + (time.time() - start)
                             c[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] = c[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] + output_c
                             expected_output[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] = expected_output[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] + partition_matrix(a[row_a:row_a+a_shape_npu[0],col_a:col_a+a_shape_npu[1]]@b[col_a:col_a+a_shape_npu[1],col_b:col_b+b_shape_npu[1]], (M,N))
                             # expected_output[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] = expected_output[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] + a[row_a:row_a+a_shape_npu[0],col_a:col_a+a_shape_npu[1]]@b[col_a:col_a+a_shape_npu[1],col_b:col_b+b_shape_npu[1]]
@@ -106,46 +113,57 @@ if __name__ == "__main__":
                             #     print(c[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]])
                             #     print(expected_output[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]])
                             #     test = test - 1
-                total_time = total_time / num_runs
+                print(f"Finished NPU run {run}")
 
-                # Otain the CPU calculation time
+            # Otain the CPU calculation time
+            total_cpu_time = 0.0
+            for run in range(num_runs):
                 start = time.time()
-                for _ in range(num_runs):
-                    test=a@b
-                total_cpu_time = (time.time() - start) / num_runs
+                test=a@b
+                total_cpu_time = total_cpu_time + (time.time() - start)
+                print(f"Finished CPU run {run}")
 
-                c = c.astype(int)
-                expected_output = expected_output.astype(int)
+            total_npu_time = total_npu_time / num_runs
+            total_npu_time_plus_ddr_transfer = total_npu_time_plus_ddr_transfer / num_runs
+            total_cpu_time = total_cpu_time / num_runs
 
-                # # Create a figure with two subplots
-                # fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+            # # Create a figure with two subplots
+            # fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
 
-                # # Display the images. Tile the axb since the output from
-                # # the kernel will be tiled.
-                # ax1.imshow(expected_output, cmap='gray')
-                # ax1.set_title('Expected Output')
+            # # Display the images. Tile the axb since the output from
+            # # the kernel will be tiled.
+            # ax1.imshow(expected_output, cmap='gray')
+            # ax1.set_title('Expected Output')
 
-                # ax2.imshow(c, cmap='gray')
-                # ax2.set_title('Output from Kernel')
+            # ax2.imshow(c, cmap='gray')
+            # ax2.set_title('Output from Kernel')
 
-                # ax3.imshow(c-expected_output, cmap='gray')
-                # ax3.set_title('Actual-Expected')
+            # ax3.imshow(c-expected_output, cmap='gray')
+            # ax3.set_title('Actual-Expected')
 
-                # # Show the plot
-                # plt.show()
+            # # Show the plot
+            # plt.show()
 
-                print('Application performance:')
-                print(f'Checking for error in kernel calculation: Min(Actual-Expected)={np.min(c-expected_output)}, Max(Actual-Expected)={np.max(c-expected_output)}')
-                print(f'total kernel calculation time (without tiling overhead)={total_time}')
-                print(f'total cpu calculation time={total_cpu_time}')
+            print(f'Checking for error in kernel calculation: Min(Actual-Expected)={np.min(c-expected_output)}, Max(Actual-Expected)={np.max(c-expected_output)}')
+            print('Application performance:')
+            print(f'total kernel calculation time (without tiling overhead)={total_npu_time}')
+            print(f'Total NPU calculation time + DDR transfer overhead={total_npu_time_plus_ddr_transfer}')
+            print(f'total cpu calculation time={total_cpu_time}')
 
-                # Write the application performance to a file
-                f.write(f"Workload: {workload[workloads.WORKLOAD_SHAPES_KEY]}\n")
-                f.write(f"NPU workload={workload[workloads.NPU_SHAPES_KEY]}\n")
-                f.write(f"Kernel workload={workload[workloads.KERNEL_SHAPES_KEY]}\n")
-                f.write(f"Kernel configuration={workload[workloads.KERNEL_MMUL_CONFIG_KEY]}\n")
-                f.write(f"Total kernel calculation time (without tiling overhead)={total_time}\n")
-                f.write(f"Total CPU calculation time={total_cpu_time}\n")
-                f.write("\n")
+            # Write the application performance to a file
+            f.write(f"Input data type: {inp_dtype}\n")
+            f.write(f"Output data type: {out_dtype}\n")
+            f.write(f"Workload: {workload[workloads.WORKLOAD_SHAPES_KEY]}\n")
+            f.write(f"NPU workload={workload[workloads.NPU_SHAPES_KEY]}\n")
+            f.write(f"Kernel workload={workload[workloads.KERNEL_SHAPES_KEY]}\n")
+            f.write(f"Kernel configuration={workload[workloads.KERNEL_MMUL_CONFIG_KEY]}\n")
+            f.write(f"Total NPU calculation time={total_npu_time}\n")
+            f.write(f"Total NPU calculation time + DDR transfer overhead={total_npu_time_plus_ddr_transfer}\n")
+            f.write(f"Total CPU calculation time={total_cpu_time}\n")
+            f.write("\n")
                 
-                del app
+            del app
+
+
+if __name__ == "__main__":
+    execute()
