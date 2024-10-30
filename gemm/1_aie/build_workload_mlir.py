@@ -9,7 +9,8 @@ import shutil
 import re
 from pprint import pprint
 
-if __name__ == "__main__":
+
+def execute():
     # Create the xclbin from the kernel source and MLIR file for each workload
     for workload in WORKLOADS:
         # Create an instance of the application
@@ -63,7 +64,7 @@ if __name__ == "__main__":
         mtx_b = np.zeros(shape=(npu_mtxb_shape[0], npu_mtxb_shape[1]), dtype=inp_dtype)
         mtx_c = np.zeros(shape=(npu_mtxa_shape[0], npu_mtxb_shape[1]), dtype=out_dtype)
         app_builder(mtx_a, mtx_b, mtx_c)
-        # TODO: Am not able to compile the kernel source using uint32_t as the output datatype
+        # NOTE: Am not able to compile the kernel source using uint32_t as the output datatype
         app_builder.to_metadata(mtx_a, mtx_b, mtx_c) # This call will generate the kernels in app_builder
         
         app_builder.ab.build(app_builder.name, Path(__file__).parent / workload[workloads.DIRECTORY_KEY] / workload[workloads.FILE_NAME_KEY], app_builder.kernels, debug=True)
@@ -91,3 +92,7 @@ if __name__ == "__main__":
             new_seq.unlink()
         os.rename(workload_dir / f"{app_builder.name}.xclbin", workload_dir / new_xclbin_name)
         os.rename(workload_dir / f"{app_builder.name}.seq", workload_dir / new_seq_name)
+
+
+if __name__ == "__main__":
+    execute()

@@ -3,7 +3,7 @@ from pathlib import Path
 import workloads
 from workloads import WORKLOADS
 
-# TODO: For some reason the .seq file generated will cause incorrect functionality if the input and output memref's aren't i32
+# NOTE: For some reason the .seq file generated will cause incorrect functionality if the input and output memref's aren't i32
 # If i32 is used instead, the .seq file that's generated will lead to correct functionality of the NPU
 DTYPE_SIZE = {'uint8': 1, 'bfloat16': 2, 'i16': 2, 'i32': 4}
 
@@ -238,7 +238,7 @@ def calculate_theoretical_workload_exec_time_ms(theoretical_kernel_exec_time_us,
     return (data_tiles * max((theoretical_kernel_exec_time_us / 10e6) + ddr_to_it_transfer_time, it_to_ddr_transfer_time)) * 10e3 # Convert to milliseconds
 
 
-if __name__ == '__main__':
+def execute():
     # Using the base MLIR file, generate the MLIR file for the workload
     for workload in WORKLOADS:
         input_file = Path(__file__).parent / f'Mmul_1aie.mlir'
@@ -272,3 +272,6 @@ if __name__ == '__main__':
             df.write(f"Data Tiles: {data_tiles}\n")
             df.write(f"Theoretical NPU Execution Time: {calculate_theoretical_workload_exec_time_ms(theoretical_kernel_exec_time_us, workload_shapes, npu_shapes, inp_dtype, out_dtype):.2f} ms\n")
             df.write("\n")
+
+if __name__ == '__main__':
+    execute()
