@@ -1,0 +1,28 @@
+Workload: [(1024, 1024), (1024, 1024), (1024, 1024)]
+NPU workload=[(64, 128), (128, 64), (64, 64)]
+Kernel workload=[(64, 128), (128, 64), (64, 64)]
+Kernel configuration=(8, 8, 4)
+Total kernel calculation time (without tiling overhead)=0.7947616577148438
+Total CPU calculation time=1.4694595336914062
+
+Workload: [(1024, 1024), (1024, 1024), (1024, 1024)]
+NPU workload=[(32, 64), (64, 32), (32, 32)]
+Kernel workload=[(32, 64), (64, 32), (32, 32)]
+Kernel configuration=(8, 8, 4)
+Total kernel calculation time (without tiling overhead)=8.088762998580933
+Total CPU calculation time=4.800894021987915
+
+Workload: [(8, 4096), (4096, 4096), (8, 4096)]
+NPU workload=[(8, 128), (128, 64), (8, 64)]
+Kernel workload=[(8, 128), (128, 64), (8, 64)]
+Kernel configuration=(8, 8, 4)
+Total kernel calculation time (without tiling overhead)=0.7680635452270508
+Total CPU calculation time=0.7195820808410645
+
+Workload: [(8, 4096), (4096, 4096), (8, 4096)]
+NPU workload=[(8, 128), (128, 32), (8, 32)]
+Kernel workload=[(8, 128), (128, 32), (8, 32)]
+Kernel configuration=(8, 8, 4)
+Total kernel calculation time (without tiling overhead)=1.102726936340332
+Total CPU calculation time=1.7067081928253174
+

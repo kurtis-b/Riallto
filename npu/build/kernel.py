@@ -70,6 +70,18 @@ class Kernel(KernelMeta):
     def _parse_code(self):
         """Using CppHeader package, C++ code is parsed to discover ports and their types."""
         parsedcpp = CppHeader(self._srccode, argType='string')
+        # Make sure the data type params don't include the C++ class, e.g. if the
+        # data type of the port is "adf::input_buffer<int8> *", make it "int8 *" instead
+        for param in parsedcpp.functions[-1]["parameters"]: 
+            param_type = param['type']
+            if '<' in param_type and '>' in param_type:
+                param['type'] = param_type[param_type.find('<')+1:param_type.rfind('>')]
+                if '*' in param_type:
+                    param['type'] = param['type'] + ' *'
+                if '&' in param_type:
+                    param['type'] = param['type'] + ' &'
+                if '__restrict' in param_type:
+                    param['type'] = param['type'] + ' __restrict'
         allports = self._parsecpp_to_ports(parsedcpp)
         functions = self._parse_functions(parsedcpp.functions)
         if self._top_function is None:
@@ -271,13 +283,13 @@ class Kernel(KernelMeta):
         display(Code(self.asm, language="c-objdump"))
 
     def _parsecpp_to_ports(self, parsedcpp):
-        bufferports = [BufferPort(param['name'], param['type'])
-                       for param in parsedcpp.functions[-1]["parameters"]
-                       if '*' in param['type']]
-
-        rtpports = [RTPPort(param['name'], param['type'], c_dtype=param['type'])
-                    for param in parsedcpp.functions[-1]["parameters"]
-                    if '*' not in param['type']]
+        bufferports = [BufferPort(param['name'], param['type']) 
+                              for param in parsedcpp.functions[-1]["parameters"] 
+                              if '*' in param['type'] or '&' in param['type']]  
+              
+        rtpports = [RTPPort(param['name'], param['type'], c_dtype=param['type']) 
+                              for param in parsedcpp.functions[-1]["parameters"] 
+                              if '*' not in param['type'] and '&' not in param['type']]  
 
         return bufferports + rtpports
 
