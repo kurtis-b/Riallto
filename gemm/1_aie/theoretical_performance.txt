@@ -1,0 +1,44 @@
+Workload: [(1024, 1024), (1024, 1024), (1024, 1024)]
+NPU: [(64, 128), (128, 64), (64, 64)]
+Kernel: [(32, 64), (64, 32), (64, 32)]
+Data type input: uint8
+Data type output: i16
+NPU Size: 24.58 KB, Kernel Size: 8.19 KB
+NPU Intensity: 42.67 Op/B, Kernel Intensity: 16.00 Op/B
+Theoretical Kernel Execution Time: 0.26 us
+Data Tiles: 2048
+Theoretical NPU Execution Time: 0.90 ms
+
+Workload: [(1024, 1024), (1024, 1024), (1024, 1024)]
+NPU: [(32, 64), (64, 32), (32, 32)]
+Kernel: [(32, 32), (64, 16), (32, 32)]
+Data type input: bfloat16
+Data type output: i32
+NPU Size: 12.29 KB, Kernel Size: 8.19 KB
+NPU Intensity: 10.67 Op/B, Kernel Intensity: 4.00 Op/B
+Theoretical Kernel Execution Time: 0.17 us
+Data Tiles: 16384
+Theoretical NPU Execution Time: 4.29 ms
+
+Workload: [(8, 4096), (4096, 4096), (8, 4096)]
+NPU: [(8, 128), (128, 64), (8, 64)]
+Kernel: [(4, 64), (64, 32), (8, 32)]
+Data type input: uint8
+Data type output: i16
+NPU Size: 10.24 KB, Kernel Size: 2.82 KB
+NPU Intensity: 12.80 Op/B, Kernel Intensity: 5.82 Op/B
+Theoretical Kernel Execution Time: 0.03 us
+Data Tiles: 2048
+Theoretical NPU Execution Time: 0.28 ms
+
+Workload: [(8, 4096), (4096, 4096), (8, 4096)]
+NPU: [(8, 128), (128, 32), (8, 32)]
+Kernel: [(8, 64), (128, 16), (8, 32)]
+Data type input: bfloat16
+Data type output: i32
+NPU Size: 11.26 KB, Kernel Size: 6.14 KB
+NPU Intensity: 5.82 Op/B, Kernel Intensity: 2.67 Op/B
+Theoretical Kernel Execution Time: 0.06 us
+Data Tiles: 4096
+Theoretical NPU Execution Time: 0.73 ms
+
