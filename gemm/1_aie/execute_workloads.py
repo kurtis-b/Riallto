@@ -24,8 +24,8 @@ def execute():
     with open(performance_file, "w") as f:
         for workload in WORKLOADS:
             workload_dir = Path(__file__).parent / workload[workloads.DIRECTORY_KEY]
-            new_xclbin_name = f"{Mmul_1aie.__name__}_{workload[workloads.FILE_NAME_KEY].split('.mlir')[0]}.xclbin"
-            new_seq_name = f"{Mmul_1aie.__name__}_{workload[workloads.FILE_NAME_KEY].split('.mlir')[0]}.seq"
+            new_xclbin_name = f"{workloads.APP_NAME}_{workload[workloads.FILE_NAME_KEY].split('.mlir')[0]}.xclbin"
+            new_seq_name = f"{workloads.APP_NAME}_{workload[workloads.FILE_NAME_KEY].split('.mlir')[0]}.seq"
             new_xclbin = workload_dir / new_xclbin_name
             new_seq = workload_dir / new_seq_name
             app = AppRunner(str(new_xclbin), fw_sequence=str(new_seq))
@@ -40,8 +40,6 @@ def execute():
             input_a = app.allocate(shape=a_shape_npu, dtype=inp_dtype)
             input_b = app.allocate(shape=b_shape_npu, dtype=inp_dtype)
             output_c = app.allocate(shape=c_shape_npu, dtype=out_dtype)
-            # print(input_a.shape, input_b.shape, output_c.shape)
-            # print(input_a.dtype, input_b.dtype, output_c.dtype)
 
             # Load array into input buffer
             a_shape_workload = workload[workloads.WORKLOAD_SHAPES_KEY][0]
@@ -56,13 +54,10 @@ def execute():
             c = np.zeros(shape=c_shape_workload, dtype=out_dtype)
             total_npu_time = 0.0
             total_npu_time_plus_ddr_transfer = 0.0
-            # print(a.shape, b.shape, c.shape)
-            # print(a.dtype, b.dtype, c.dtype)
 
             M = workload[workloads.KERNEL_MMUL_CONFIG_KEY][0]
             K = workload[workloads.KERNEL_MMUL_CONFIG_KEY][1]
             N = workload[workloads.KERNEL_MMUL_CONFIG_KEY][2]
-            # test = 4
             for run in range(num_runs):
                 c = np.zeros(shape=c_shape_workload, dtype=out_dtype) # Reset output matrix c to zeros
                 expected_output = np.zeros(shape=c_shape_workload, dtype=out_dtype) # Reset expected output matrix to zeros
@@ -95,24 +90,6 @@ def execute():
                             total_npu_time_plus_ddr_transfer = total_npu_time_plus_ddr_transfer + (time.time() - start)
                             c[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] = c[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] + output_c
                             expected_output[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] = expected_output[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] + partition_matrix(a[row_a:row_a+a_shape_npu[0],col_a:col_a+a_shape_npu[1]]@b[col_a:col_a+a_shape_npu[1],col_b:col_b+b_shape_npu[1]], (M,N))
-                            # expected_output[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] = expected_output[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] + a[row_a:row_a+a_shape_npu[0],col_a:col_a+a_shape_npu[1]]@b[col_a:col_a+a_shape_npu[1],col_b:col_b+b_shape_npu[1]]
-                            # with np.printoptions(threshold=np.inf):
-                            # if test == 4 and np.mean(output_c) != 32:
-                            #     print(a_tiled, b_tiled)
-                            #     print(np.mean(a_tiled), a_tiled.shape, np.mean(b_tiled), b_tiled.shape)
-                            #     print(input_a, input_b)
-                            #     print(np.mean(input_a), np.mean(input_b), np.mean(output_c))
-                            #     print(c[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]])
-                            #     print(expected_output[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]])
-                            #     test = test - 1
-                            # elif test > 0:
-                            #     print(a_tiled, b_tiled)
-                            #     print(np.mean(a_tiled), a_tiled.shape, np.mean(b_tiled), b_tiled.shape)
-                            #     print(input_a, input_b)
-                            #     print(np.mean(input_a), np.mean(input_b), np.mean(output_c))
-                            #     print(c[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]])
-                            #     print(expected_output[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]])
-                            #     test = test - 1
                 print(f"Finished NPU run {run}")
 
             # Otain the CPU calculation time

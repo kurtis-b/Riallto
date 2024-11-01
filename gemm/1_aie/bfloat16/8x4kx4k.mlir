@@ -41,8 +41,8 @@ func.func @sequence(%itbuffer_0 : memref<8x64xi32>,%itbuffer_1 : memref<128x16xi
     %c32 = arith.constant 32 : i32
 
 
-    %c128 = arith.constant 128 : i32
     %c8 = arith.constant 8 : i32
+    %c128 = arith.constant 128 : i32
     AIEX.ipu.dma_memcpy_nd(%c0, %c0,%itbuffer_2[%c0, %c0, %c0, %c0][%c1, %c1, %c8, %c32][%c0, %c0, %c0]){ metadata= @mmul_start_0___pC___itbuffer_2___ITin, id = 2 : i32 } :(i32, i32, memref<8x32xi32>, [i32,i32,i32,i32], [i32,i32,i32,i32], [i32,i32,i32])
 
     AIEX.ipu.dma_memcpy_nd(%c0, %c0,%itbuffer_0[%c0, %c0, %c0, %c0][%c1, %c1, %c8, %c64][%c0, %c0, %c0]){ metadata= @itbuffer_0___ITout___mmul_start_0___pA, id = 0 : i32 } :(i32, i32, memref<8x64xi32>, [i32,i32,i32,i32], [i32,i32,i32,i32], [i32,i32,i32])

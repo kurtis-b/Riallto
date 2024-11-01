@@ -68,20 +68,6 @@ def execute():
     kernel_1 = generate_kernel_start(kernel_src, (64, 64), (64, 64), np.uint8, np.uint16)
     kernel_2 = generate_kernel_start(kernel_src, (64, 64), (64, 64), np.uint8, np.uint16)
     kernel_3 = generate_kernel_start(kernel_src, (64, 64), (64, 64), np.uint8, np.uint16)
-    # kernel_src = Path(__file__).parent.parent / "mmul_accum.cc"
-    # kernel_src = str(kernel_src)
-    # kernel_1 = generate_kernel_accum(kernel_src, (64, 64), (64, 64), np.uint8, np.uint16)
-    # kernel_2 = generate_kernel_accum(kernel_src, (64, 64), (64, 64), np.uint8, np.uint16)
-    # kernel_src = Path(__file__).parent.parent / "mmul_end.cc"
-    # kernel_src = str(kernel_src)
-    # kernel_3 = generate_kernel_end(kernel_src, (64, 64), (64, 64), np.uint8, np.uint16)
-    # NOTE: Set the tile locations for each kernel. This helps with the generated MLIR, which
-    # ends up placing the kernels randomly across the column rather than in a straight line.
-    # For example, the end kernel could end up placed at tile (0,4) if the app builder isn't
-    # aware of the tile locations of the kernels. This is important because there's only 
-    # 2 data movers in each direction for CT and IT, and 6 each direction for MT. If the kernels
-    # are placed randomly, the data movers could be oversubscribed. This can show up as an
-    # error during the MLIR passes. 
     kernel_0.tloc = (0,5)
     kernel_1.tloc = (0,4)
     kernel_2.tloc = (0,3)

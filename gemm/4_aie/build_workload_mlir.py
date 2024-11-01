@@ -15,7 +15,6 @@ def execute():
     # Create the xclbin from the kernel source and MLIR file for each workload
     for workload in WORKLOADS:
         # Create an instance of the application
-        # kernel_src = [Path(__file__).parent.parent / "mmul_start.cc", Path(__file__).parent.parent / "mmul_accum.cc", Path(__file__).parent.parent / "mmul_accum.cc", Path(__file__).parent.parent / "mmul_end.cc"]
         kernel_src = [Path(__file__).parent.parent / "mmul_start.cc", Path(__file__).parent.parent / "mmul_start.cc", Path(__file__).parent.parent / "mmul_start.cc", Path(__file__).parent.parent / "mmul_start.cc"]
         kernels = []
         for src in kernel_src:
@@ -66,23 +65,22 @@ def execute():
                 kernels.append(generate_kernel_end(str(temp_kernel_src_path), workload[workloads.KERNEL_SHAPES_KEY][0], workload[workloads.KERNEL_SHAPES_KEY][1], inp_dtype, out_dtype))
             os.remove(temp_kernel_src_path)
         ab = AppXclbinBuilder()
-        ab_name = 'Mmul_4aie'
-        ab.build(ab_name, Path(__file__).parent / workload[workloads.DIRECTORY_KEY] / workload[workloads.FILE_NAME_KEY], kernels, debug=True)
+        ab.build(workloads.APP_NAME, Path(__file__).parent / workload[workloads.DIRECTORY_KEY] / workload[workloads.FILE_NAME_KEY], kernels, debug=True)
 
         # Move the xclbin and seq file to the directory from the workload dict
         workload_dir = Path(__file__).parent / workload[workloads.DIRECTORY_KEY]
-        xclbin_file = Path(__file__).parent / f"{ab_name}.xclbin"
-        seq_file = Path(__file__).parent / f"{ab_name}.seq"
+        xclbin_file = Path(__file__).parent / f"{workloads.APP_NAME}.xclbin"
+        seq_file = Path(__file__).parent / f"{workloads.APP_NAME}.seq"
 
         if not workload_dir.exists():
             workload_dir.mkdir(parents=True, exist_ok=True)
 
-        shutil.move(str(xclbin_file), str(workload_dir / f"{ab_name}.xclbin"))
-        shutil.move(str(seq_file), str(workload_dir / f"{ab_name}.seq"))
+        shutil.move(str(xclbin_file), str(workload_dir / f"{workloads.APP_NAME}.xclbin"))
+        shutil.move(str(seq_file), str(workload_dir / f"{workloads.APP_NAME}.seq"))
 
         # Rename the xclbin and seq files by appending the workload file name to its current file name up to the ".mlir" string
-        new_xclbin_name = f"{ab_name}_{workload[workloads.FILE_NAME_KEY].split('.mlir')[0]}.xclbin"
-        new_seq_name = f"{ab_name}_{workload[workloads.FILE_NAME_KEY].split('.mlir')[0]}.seq"
+        new_xclbin_name = f"{workloads.APP_NAME}_{workload[workloads.FILE_NAME_KEY].split('.mlir')[0]}.xclbin"
+        new_seq_name = f"{workloads.APP_NAME}_{workload[workloads.FILE_NAME_KEY].split('.mlir')[0]}.seq"
         # Replace the xclbin and seq files in the directory if they exist
         new_xclbin = workload_dir / new_xclbin_name
         new_seq = workload_dir / new_seq_name
@@ -90,8 +88,8 @@ def execute():
             new_xclbin.unlink()
         if new_seq.exists():
             new_seq.unlink()
-        os.rename(workload_dir / f"{ab_name}.xclbin", workload_dir / new_xclbin_name)
-        os.rename(workload_dir / f"{ab_name}.seq", workload_dir / new_seq_name)
+        os.rename(workload_dir / f"{workloads.APP_NAME}.xclbin", workload_dir / new_xclbin_name)
+        os.rename(workload_dir / f"{workloads.APP_NAME}.seq", workload_dir / new_seq_name)
 
 
 if __name__ == "__main__":
