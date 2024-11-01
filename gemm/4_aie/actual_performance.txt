@@ -1,0 +1,40 @@
+Input data type: <class 'numpy.uint8'>
+Output data type: <class 'numpy.uint16'>
+Workload: [(1024, 1024), (1024, 1024), (1024, 1024)]
+NPU workload=[(64, 64), (64, 256), (64, 256)]
+Kernel workload=[(64, 64), (64, 64), (64, 64)]
+Kernel configuration=(8, 8, 4)
+Total NPU calculation time=0.3981058120727539
+Total NPU calculation time + DDR transfer overhead=0.4258237600326538
+Total CPU calculation time=1.5329867601394653
+
+Input data type: <class 'ml_dtypes.bfloat16'>
+Output data type: <class 'numpy.float32'>
+Workload: [(1024, 1024), (1024, 1024), (1024, 1024)]
+NPU workload=[(32, 64), (64, 128), (32, 128)]
+Kernel workload=[(32, 64), (64, 32), (32, 32)]
+Kernel configuration=(8, 8, 4)
+Total NPU calculation time=1.4828786849975586
+Total NPU calculation time + DDR transfer overhead=1.5844547986984252
+Total CPU calculation time=4.914125680923462
+
+Input data type: <class 'numpy.uint8'>
+Output data type: <class 'numpy.uint16'>
+Workload: [(8, 4096), (4096, 4096), (8, 4096)]
+NPU workload=[(8, 128), (128, 256), (8, 256)]
+Kernel workload=[(8, 128), (128, 64), (8, 64)]
+Kernel configuration=(8, 8, 4)
+Total NPU calculation time=0.15443756580352783
+Total NPU calculation time + DDR transfer overhead=0.1674445629119873
+Total CPU calculation time=0.7018061399459838
+
+Input data type: <class 'ml_dtypes.bfloat16'>
+Output data type: <class 'numpy.float32'>
+Workload: [(8, 4096), (4096, 4096), (8, 4096)]
+NPU workload=[(8, 128), (128, 128), (8, 128)]
+Kernel workload=[(8, 128), (128, 32), (8, 32)]
+Kernel configuration=(8, 8, 4)
+Total NPU calculation time=0.36179304122924805
+Total NPU calculation time + DDR transfer overhead=0.4137666463851929
+Total CPU calculation time=1.7299668312072753
+
