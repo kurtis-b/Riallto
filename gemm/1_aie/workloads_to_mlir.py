@@ -5,6 +5,7 @@ from workloads import WORKLOADS
 
 # NOTE: For some reason the .seq file generated will cause incorrect functionality if the input and output memref's aren't i32
 # If i32 is used instead, the .seq file that's generated will lead to correct functionality of the NPU
+# It might've also been that the sequence that was generated was incorrect, but I need to investigate further
 DTYPE_SIZE = {'uint8': 1, 'bfloat16': 2, 'i16': 2, 'i32': 4}
 
 
@@ -45,7 +46,12 @@ def replace_func_memref(line, shapes, inp_dtype, out_dtype):
     pattern = r'(func.*?@mmul.*?\(.*?)'
     for _ in range(len(shapes) - 1): 
         pattern += r'memref<(\d+)xi32>, '
-    pattern += r'memref<(\d+)xi32>\)'
+    pattern += r'memref<(\d+)xi32>'
+    if '_start' not in line: # The mmul kernels other than start have an additional memref for the accumulation
+        pattern += r', memref<(\d+)xi32>\)'
+    else:
+        pattern += r'\)'
+
 
     def replacement(match):
         prefix = match.group(1)
@@ -60,6 +66,8 @@ def replace_func_memref(line, shapes, inp_dtype, out_dtype):
         # elif out_dtype == 'i32':
         #     memrefs = memrefs + [f'memref<{sizes[len(shapes) - 1]}xi32>']
         memrefs = [f'memref<{size}xi32>' for size in sizes]
+        if '_start' not in line: # The mmul kernels other than start have an additional memref for the accumulation
+            memrefs.append(f'memref<{sizes[-1]}xi32>')
         return prefix + ', '.join(memrefs) + ')'
 
     return re.sub(pattern, replacement, line)
@@ -67,9 +75,9 @@ def replace_func_memref(line, shapes, inp_dtype, out_dtype):
 
 def replace_sequence_memref(line, shapes, inp_dtype, out_dtype):
     pattern = r'(func.*?@sequence.*?\(.*?)'
-    for i in range(len(shapes) - 1): 
-        pattern += rf'%itbuffer_{i} : memref<(\d+)x(\d+)xi32>,'
-    pattern += rf'%itbuffer_{len(shapes) - 1} : memref<(\d+)x(\d+)xi32>\)'
+    for i in range(len(shapes) - 1):
+        pattern += r'%itbuffer_\d+ : memref<(\d+)x(\d+)xi32>,'
+    pattern += r'%itbuffer_\d+ : memref<(\d+)x(\d+)xi32>\)'
 
     def replacement(match):
         prefix = match.group(1)
@@ -123,6 +131,25 @@ def process_mlir_file(input_file, output_file, inp_dtype, out_dtype, npu_shapes,
                 kernel_shapes[-1] = (kernel_shapes[-1][0], kernel_shapes[-1][1] // 2)
             else: 
                 kernel_shapes[-1] = (kernel_shapes[-1][0] // 2, kernel_shapes[-1][1])
+    # Adjust the input kernel_shapes to 32-bit width based on the inp_dtype
+    # NOTE: Seems like the first dimension needs to be preserved in the sequence function
+    # to get the correct functionality. Maybe the compiler interprets the shapes as 
+    # the number of bytes per row, so the first dimension needs to be preserved
+    if inp_dtype != 'i32':
+        for i, npu_shape in enumerate(npu_shapes[:-1]):
+            for j in range(DTYPE_SIZE['i32'] // DTYPE_SIZE[inp_dtype] // 2):
+                if j % 2 == 0:
+                    npu_shape = (npu_shape[0], npu_shape[1] // 2)
+                else: 
+                    npu_shape = (npu_shape[0] // 2, npu_shape[1])
+            npu_shapes[i] = npu_shape
+    # Adjust the output kernel shape to 32-bit width if the out_dtype isn't 'i32'
+    if out_dtype != 'i32':
+        for j in range(DTYPE_SIZE['i32'] // DTYPE_SIZE[out_dtype] // 2):
+            if j % 2 == 0:
+                npu_shapes[-1] = (npu_shapes[-1][0], npu_shapes[-1][1] // 2)
+            else: 
+                npu_shapes[-1] = (npu_shapes[-1][0] // 2, npu_shapes[-1][1])
     ssa_consts = [] # Save the SSA constants to be check whether all of the ones needed are in the file
     with open(output_file, 'w') as file:
         line_iter = iter(lines)
@@ -131,7 +158,13 @@ def process_mlir_file(input_file, output_file, inp_dtype, out_dtype, npu_shapes,
             if 'memref' in line:
                 if 'sequence' not in line:
                     if 'func.' not in line:
-                        if 'pA' in line:
+                        if 'pAccum' in line: # Do before 'pA' since 'pA' is in 'pAccum'
+                            line = replace_memref(line, kernel_shapes[2], out_dtype)
+                            if 'subview' in line:
+                                file.write(line)
+                                line = next(line_iter, None)
+                                line = replace_memref(line, kernel_shapes[2], out_dtype)
+                        elif 'pA' in line:
                             line = replace_memref(line, kernel_shapes[0], inp_dtype)
                             if 'subview' in line:
                                 file.write(line)
@@ -149,24 +182,35 @@ def process_mlir_file(input_file, output_file, inp_dtype, out_dtype, npu_shapes,
                                 file.write(line)
                                 line = next(line_iter, None)
                                 line = replace_memref(line, kernel_shapes[2], out_dtype)
+                        else: # NOTE: For now, assume the first dimension of pB is packet split. A better way would be to save which input the MT buffer is linked to and then update the dimensions of the IT to MT buffer FIFO in a second pass
+                            if 'mtbuffer' in line and 'MTin' in line:
+                                line = replace_memref(line, npu_shapes[1], out_dtype)
+                            elif 'mtbuffer' in line and 'MTout' in line:
+                                line = replace_memref(line, npu_shapes[2], out_dtype)
+                            elif 'itbuffer' in line and 'ITout' in line:
+                                line = replace_memref(line, kernel_shapes[0], out_dtype)
+                                if 'subview' in line:
+                                    file.write(line)
+                                    line = next(line_iter, None)
+                                    line = replace_memref(line, kernel_shapes[0], inp_dtype)
                     else:
                         line = replace_func_memref(line, kernel_shapes, inp_dtype, out_dtype)
                 else:
                     break
             file.write(line)
             line = next(line_iter, None)
-        line = replace_sequence_memref(line, kernel_shapes, inp_dtype, out_dtype) # In the sequence function since the memrefs will be in two dimensions in the generated MLIR
+        line = replace_sequence_memref(line, npu_shapes, inp_dtype, out_dtype) # In the sequence function since the memrefs will be in two dimensions in the generated MLIR
         file.write(line)
         line = next(line_iter, None)
         while line is not None:
             if 'memref' in line:
-                line = replace_2d_memref(line, kernel_shapes, inp_dtype if 'pC' not in line else out_dtype)
-                if 'pA' in line:
-                    line = replace_sequence_sizes(line, kernel_shapes[0])
-                elif 'pB' in line:
-                    line = replace_sequence_sizes(line, kernel_shapes[1])
-                elif 'pC' in line:
-                    line = replace_sequence_sizes(line, kernel_shapes[2])
+                line = replace_2d_memref(line, npu_shapes, inp_dtype if 'pC' not in line else out_dtype)
+                if 'itbuffer_0' in line:
+                    line = replace_sequence_sizes(line, npu_shapes[0])
+                elif 'itbuffer_1' in line:
+                    line = replace_sequence_sizes(line, npu_shapes[1])
+                elif 'itbuffer_2' in line:
+                    line = replace_sequence_sizes(line, npu_shapes[2])
             if 'arith.constant' in line:
                 ssa_consts.append(line[line.index('c')+1:line.index('=')].strip())
             file.write(line)
@@ -241,7 +285,7 @@ def calculate_theoretical_workload_exec_time_ms(theoretical_kernel_exec_time_us,
 def execute():
     # Using the base MLIR file, generate the MLIR file for the workload
     for workload in WORKLOADS:
-        input_file = Path(__file__).parent / f'Mmul_1aie.mlir'
+        input_file = Path(__file__).parent / workloads.EDITED_MLIR_FILE_NAME
         output_file = Path(__file__).parent / workload[workloads.DIRECTORY_KEY] / workload[workloads.FILE_NAME_KEY]
         inp_dtype = workload[workloads.DATA_TYPE_INPUT_KEY]
         out_dtype = workload[workloads.DATA_TYPE_OUTPUT_KEY]

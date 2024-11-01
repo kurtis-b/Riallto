@@ -6,13 +6,14 @@ NPU_SHAPES_KEY = 'npu_shapes'
 KERNEL_SHAPES_KEY = 'kernel_shapes'
 WORKLOAD_SHAPES_KEY = 'workload_shapes'
 KERNEL_MMUL_CONFIG_KEY = 'mmul_config'
+APP_NAME = 'Mmul_1aie'
+GENERIC_MLIR_FILE_NAME = f"{APP_NAME}.mlir"
+EDITED_MLIR_FILE_NAME = f"{APP_NAME}.mlir"
 
 WORKLOADS = [
     # TODO: Vary the NPU shapes and MMUL config to see how much it affects the application performance
     # For example, with the uint8 1kx1kx1k workload and MMUL config (8, 8, 4), kernel shapes of [(64, 128), (128, 64), (64, 64)] performed twice as fast as [(64, 64), (64, 64), (64, 64)]
     {
-        # 23 bits max for accumulation
-        # 32 KB in Data Memory
         DIRECTORY_KEY: 'uint8',
         FILE_NAME_KEY: '1kx1kx1k.mlir',
         DATA_TYPE_INPUT_KEY: 'uint8',
@@ -23,8 +24,6 @@ WORKLOADS = [
         KERNEL_MMUL_CONFIG_KEY: (8, 8, 4)
     },
     {
-        # 37 bits max for accumulation
-        # 8 KB in Data Memory
         DIRECTORY_KEY: 'bfloat16',
         FILE_NAME_KEY: '1kx1kx1k.mlir',
         DATA_TYPE_INPUT_KEY: 'bfloat16',
@@ -35,8 +34,6 @@ WORKLOADS = [
         KERNEL_MMUL_CONFIG_KEY: (8, 8, 4)
     },
     {
-        # 25 bits max for accumulation
-        # 38 KB in Data Memory
         DIRECTORY_KEY: 'uint8',
         FILE_NAME_KEY: '8x4kx4k.mlir',
         DATA_TYPE_INPUT_KEY: 'uint8',
@@ -47,8 +44,6 @@ WORKLOADS = [
         KERNEL_MMUL_CONFIG_KEY: (8, 8, 4)
     },
     {
-        # 37 bits max for accumulation
-        # 2.6 KB in Data Memory
         DIRECTORY_KEY: 'bfloat16',
         FILE_NAME_KEY: '8x4kx4k.mlir',
         DATA_TYPE_INPUT_KEY: 'bfloat16',

@@ -5,6 +5,7 @@ from workloads import WORKLOADS
 
 # NOTE: For some reason the .seq file generated will cause incorrect functionality if the input and output memref's aren't i32
 # If i32 is used instead, the .seq file that's generated will lead to correct functionality of the NPU
+# It might've also been that the sequence that was generated was incorrect, but I need to investigate further
 DTYPE_SIZE = {'uint8': 1, 'bfloat16': 2, 'i16': 2, 'i32': 4}
 
 

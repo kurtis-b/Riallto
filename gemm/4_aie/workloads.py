@@ -6,8 +6,9 @@ NPU_SHAPES_KEY = 'npu_shapes'
 KERNEL_SHAPES_KEY = 'kernel_shapes'
 WORKLOAD_SHAPES_KEY = 'workload_shapes'
 KERNEL_MMUL_CONFIG_KEY = 'mmul_config'
-GENERIC_MLIR_FILE_NAME = "Mmul_4aie_DO_NOT_USE.mlir"
-EDITED_MLIR_FILE_NAME = "Mmul_4aie_EDITED.mlir"
+APP_NAME = 'Mmul_4aie'
+GENERIC_MLIR_FILE_NAME = f"{APP_NAME}_DO_NOT_USE.mlir"
+EDITED_MLIR_FILE_NAME = f"{APP_NAME}_EDITED.mlir"
 
 WORKLOADS = [
     # TODO: Vary the NPU shapes and MMUL config to see how much it affects the application performance
