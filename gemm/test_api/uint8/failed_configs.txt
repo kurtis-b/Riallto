@@ -1,0 +1,13 @@
+Workload: 1kx1kx1k.mlir, M: 1, K: 16, N: 8, Input Data Type: uint8_t, Output Data Type: uint16_t
+Workload: 1kx1kx1k.mlir, M: 8, K: 8, N: 4, Input Data Type: uint8_t, Output Data Type: uint32_t
+Workload: 1kx1kx1k.mlir, M: 4, K: 8, N: 4, Input Data Type: uint8_t, Output Data Type: uint32_t
+Workload: 1kx1kx1k.mlir, M: 4, K: 16, N: 4, Input Data Type: uint8_t, Output Data Type: uint32_t
+Workload: 1kx1kx1k.mlir, M: 2, K: 8, N: 8, Input Data Type: uint8_t, Output Data Type: uint32_t
+Workload: 1kx1kx1k.mlir, M: 4, K: 8, N: 8, Input Data Type: uint8_t, Output Data Type: uint32_t
+Workload: 1kx1kx1k.mlir, M: 8, K: 8, N: 8, Input Data Type: uint8_t, Output Data Type: uint32_t
+Workload: 1kx1kx1k.mlir, M: 1, K: 16, N: 8, Input Data Type: uint8_t, Output Data Type: uint32_t
+Workload: 1kx1kx1k.mlir, M: 2, K: 16, N: 8, Input Data Type: uint8_t, Output Data Type: uint32_t
+Workload: 1kx1kx1k.mlir, M: 4, K: 16, N: 8, Input Data Type: uint8_t, Output Data Type: uint32_t
+Workload: 1kx1kx1k.mlir, M: 1, K: 16, N: 8, Input Data Type: int8, Output Data Type: int16
+Workload: 1kx1kx1k.mlir, M: 8, K: 8, N: 4, Input Data Type: int8, Output Data Type: int32
+Workload: 1kx1kx1k.mlir, M: 8, K: 8, N: 8, Input Data Type: int8, Output Data Type: int32

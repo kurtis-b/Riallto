@@ -9,9 +9,9 @@ NPU_SHAPES_KEY = 'npu_shapes'
 KERNEL_SHAPES_KEY = 'kernel_shapes'
 WORKLOAD_SHAPES_KEY = 'workload_shapes'
 KERNEL_MMUL_CONFIG_KEY = 'mmul_config'
-APP_NAME = 'Mmul_1aie'
-GENERIC_MLIR_FILE_NAME = f"{APP_NAME}.mlir"
-EDITED_MLIR_FILE_NAME = f"{APP_NAME}.mlir"
+APP_NAME = 'Mmul_16aie'
+GENERIC_MLIR_FILE_NAME = f"{APP_NAME}_DO_NOT_USE.mlir"
+EDITED_MLIR_FILE_NAME = f"{APP_NAME}_EDITED.mlir"
 
 
 INP_DTYPES = {
@@ -56,17 +56,17 @@ WORKLOADS = [
         FILE_NAME_KEY: '1kx1kx1k.mlir',
         DATA_TYPE_INPUT_KEY: 'i8',
         DATA_TYPE_OUTPUT_KEY: 'i32',
-        NPU_SHAPES_KEY: [(64, 64), (64, 64), (64, 64)],  # A, B, C
+        NPU_SHAPES_KEY: [(64, 4*64), (4*64, 4*64), (64, 4*64)],  # A, B, C
         KERNEL_SHAPES_KEY: [(64, 64), (64, 64), (64, 64)],  # A, B, C
         WORKLOAD_SHAPES_KEY: [(1024, 1024), (1024, 1024), (1024, 1024)],  # A, B, C
-        KERNEL_MMUL_CONFIG_KEY: (4, 8, 8)
+        KERNEL_MMUL_CONFIG_KEY: (2, 8, 8)
     },
     {
         DIRECTORY_KEY: 'bfloat16',
         FILE_NAME_KEY: '1kx1kx1k.mlir',
         DATA_TYPE_INPUT_KEY: 'bfloat16',
         DATA_TYPE_OUTPUT_KEY: 'f32',
-        NPU_SHAPES_KEY: [(32, 32), (32, 32), (32, 32)],  # A, B, C
+        NPU_SHAPES_KEY: [(32, 4*32), (4*32, 4*32), (32, 4*32)],  # A, B, C
         KERNEL_SHAPES_KEY: [(32, 32), (32, 32), (32, 32)],  # A, B, C
         WORKLOAD_SHAPES_KEY: [(1024, 1024), (1024, 1024), (1024, 1024)],  # A, B, C
         KERNEL_MMUL_CONFIG_KEY: (4, 8, 4)
@@ -76,17 +76,17 @@ WORKLOADS = [
         FILE_NAME_KEY: '8x4kx4k.mlir',
         DATA_TYPE_INPUT_KEY: 'i8',
         DATA_TYPE_OUTPUT_KEY: 'i32',
-        NPU_SHAPES_KEY: [(8, 256), (256, 64), (8, 64)],  # A, B, C
+        NPU_SHAPES_KEY: [(8, 4*256), (4*256, 4*64), (8,4*64)],  # A, B, C
         KERNEL_SHAPES_KEY: [(8, 256), (256, 64), (8, 64)],  # A, B, C
         WORKLOAD_SHAPES_KEY: [(8, 4096), (4096, 4096), (8, 4096)],  # A, B, C
-        KERNEL_MMUL_CONFIG_KEY: (4, 8, 8)
+        KERNEL_MMUL_CONFIG_KEY: (2, 8, 8)
     },
     {
         DIRECTORY_KEY: 'bfloat16',
         FILE_NAME_KEY: '8x4kx4k.mlir',
         DATA_TYPE_INPUT_KEY: 'bfloat16',
         DATA_TYPE_OUTPUT_KEY: 'f32',
-        NPU_SHAPES_KEY: [(8, 256), (256, 32), (8, 32)],  # A, B, C
+        NPU_SHAPES_KEY: [(8, 4*256), (4*256, 4*32), (8, 4*32)],  # A, B, C
         KERNEL_SHAPES_KEY: [(8, 256), (256, 32), (8, 32)],  # A, B, C
         WORKLOAD_SHAPES_KEY: [(8, 4096), (4096, 4096), (8, 4096)],  # A, B, C
         KERNEL_MMUL_CONFIG_KEY: (4, 8, 4)

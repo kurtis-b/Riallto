@@ -75,10 +75,13 @@ def execute():
                 for row_a in range(0, a_shape_workload[0], a_shape_npu[0]):
                     for col_b in range(0, b_shape_workload[1], b_shape_npu[1]):
                         for col_a in range(0, a_shape_workload[1], a_shape_npu[1]):
-                            a_tiled = partition_matrix(a[row_a:row_a+a_shape_npu[0],col_a:col_a+a_shape_npu[1]], (M,K))
+                            a_tiled = a[row_a:row_a+a_shape_npu[0],col_a:col_a+a_shape_npu[1]]
+                            for i in range(a_shape_npu[1] // a_shape_kernel[1]):
+                                a_tiled[0:a_shape_kernel[0],i*a_shape_kernel[1]:(i+1)*a_shape_kernel[1]] = partition_matrix(a[0:a_shape_kernel[0],i*a_shape_kernel[1]:(i+1)*a_shape_kernel[1]], (M,K))
                             b_tiled = b[col_a:col_a+b_shape_npu[0],col_b:col_b+b_shape_npu[1]]
-                            for i in range(b_shape_npu[1] // b_shape_kernel[1]):
-                                    b_tiled[0:a_shape_npu[1],i*b_shape_kernel[1]:(i+1)*b_shape_kernel[1]] = partition_matrix(b[0:a_shape_npu[1],i*b_shape_kernel[1]:(i+1)*b_shape_kernel[1]], (K,N))
+                            for j in range(b_shape_npu[0] // b_shape_kernel[0]):
+                                for i in range(b_shape_npu[1] // b_shape_kernel[1]):
+                                        b_tiled[j*a_shape_kernel[1]:(j+1)*a_shape_kernel[1],i*b_shape_kernel[1]:(i+1)*b_shape_kernel[1]] = partition_matrix(b[j*a_shape_kernel[1]:(j+1)*a_shape_kernel[1],i*b_shape_kernel[1]:(i+1)*b_shape_kernel[1]], (K,N))
                             # a_tiled = a[row_a:row_a+a_shape_npu[0],col_a:col_a+a_shape_npu[1]]
                             # b_tiled = b[col_a:col_a+a_shape_npu[1],col_b:col_b+b_shape_npu[1]]
                             start = time.time()
@@ -144,7 +147,7 @@ def execute():
             print(f'total cpu calculation time={total_cpu_time}')
 
             # Write the application performance to a file
-            f.write(f"{4},{inp_dtype},{workload[WORKLOAD_SHAPES_KEY]},{workload[NPU_SHAPES_KEY]},{workload[KERNEL_SHAPES_KEY]},{total_cpu_time},{total_npu_time},{total_npu_time_plus_ddr_transfer}\n")
+            f.write(f"{16},{inp_dtype},{workload[WORKLOAD_SHAPES_KEY]},{workload[NPU_SHAPES_KEY]},{workload[KERNEL_SHAPES_KEY]},{total_cpu_time},{total_npu_time},{total_npu_time_plus_ddr_transfer}\n")
                 
         del app
 

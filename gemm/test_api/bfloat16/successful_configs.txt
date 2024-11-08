@@ -1,0 +1,2 @@
+Workload: 1kx1kx1k.mlir, M: 8, K: 8, N: 4, Input Data Type: bfloat16, Output Data Type: float
+Workload: 1kx1kx1k.mlir, M: 4, K: 8, N: 4, Input Data Type: bfloat16, Output Data Type: float

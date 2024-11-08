@@ -12,17 +12,17 @@ module  {
    AIE.objectFifo @mtbuffer_0___MTout___mmul_start_1___pA(%tile01, {%tile04}, 2 : i32) : !AIE.objectFifo<memref<1024xi32>>
    AIE.objectFifo @mtbuffer_0___MTout___mmul_start_2___pA(%tile01, {%tile03}, 2 : i32) : !AIE.objectFifo<memref<1024xi32>>
    AIE.objectFifo @mtbuffer_0___MTout___mmul_start_3___pA(%tile01, {%tile02}, 2 : i32) : !AIE.objectFifo<memref<1024xi32>>
-   AIE.objectFifo @mmul_start_0___pC___mtbuffer_1___MTin(%tile05, {%tile01}, 2 : i32) : !AIE.objectFifo<memref<2048xi32>>
-   AIE.objectFifo @mmul_start_1___pC___mtbuffer_1___MTin(%tile04, {%tile01}, 2 : i32) : !AIE.objectFifo<memref<2048xi32>>
-   AIE.objectFifo @mmul_start_2___pC___mtbuffer_1___MTin(%tile03, {%tile01}, 2 : i32) : !AIE.objectFifo<memref<2048xi32>>
-   AIE.objectFifo @mmul_start_3___pC___mtbuffer_1___MTin(%tile02, {%tile01}, 2 : i32) : !AIE.objectFifo<memref<2048xi32>>
-   AIE.objectFifo @mtbuffer_1___MTout___itbuffer_2___ITin(%tile01, {%tile00}, 2 : i32) : !AIE.objectFifo<memref<8192xi32>>
-   AIE.objectFifo @itbuffer_1__ITout(%tile00, {%tile03, %tile05, %tile02, %tile04}, [2,2,2,2,2]) : !AIE.objectFifo<memref<1024xi32>>
+   AIE.objectFifo @mmul_start_0___pC___mtbuffer_1___MTin(%tile05, {%tile01}, 2 : i32) : !AIE.objectFifo<memref<4096xi32>>
+   AIE.objectFifo @mmul_start_1___pC___mtbuffer_1___MTin(%tile04, {%tile01}, 2 : i32) : !AIE.objectFifo<memref<4096xi32>>
+   AIE.objectFifo @mmul_start_2___pC___mtbuffer_1___MTin(%tile03, {%tile01}, 2 : i32) : !AIE.objectFifo<memref<4096xi32>>
+   AIE.objectFifo @mmul_start_3___pC___mtbuffer_1___MTin(%tile02, {%tile01}, 2 : i32) : !AIE.objectFifo<memref<4096xi32>>
+   AIE.objectFifo @mtbuffer_1___MTout___itbuffer_2___ITin(%tile01, {%tile00}, 2 : i32) : !AIE.objectFifo<memref<16384xi32>>
+   AIE.objectFifo @itbuffer_1__ITout(%tile00, {%tile02, %tile04, %tile03, %tile05}, [2,2,2,2,2]) : !AIE.objectFifo<memref<1024xi32>>
 
    AIE.objectFifo.link [@itbuffer_0___ITout___mtbuffer_0___MTin ] -> [@mtbuffer_0___MTout___mmul_start_0___pA,@mtbuffer_0___MTout___mmul_start_1___pA,@mtbuffer_0___MTout___mmul_start_2___pA,@mtbuffer_0___MTout___mmul_start_3___pA] ()
    AIE.objectFifo.link [@mmul_start_0___pC___mtbuffer_1___MTin,@mmul_start_1___pC___mtbuffer_1___MTin,@mmul_start_2___pC___mtbuffer_1___MTin,@mmul_start_3___pC___mtbuffer_1___MTin ] -> [@mtbuffer_1___MTout___itbuffer_2___ITin] ()
 
-   func.func private @mmul_start(memref<1024xi32>, memref<1024xi32>, memref<2048xi32>) -> ()
+   func.func private @mmul_start(memref<1024xi32>, memref<1024xi32>, memref<4096xi32>) -> ()
 
    AIE.core(%tile02) {
       %c0 = arith.constant 0 : index
@@ -33,10 +33,10 @@ module  {
          %elem5 = AIE.objectFifo.subview.access %subview5[0] : !AIE.objectFifoSubview<memref<1024xi32>> -> memref<1024xi32>
          %subview11 = AIE.objectFifo.acquire @itbuffer_1__ITout(Consume, 1) : !AIE.objectFifoSubview<memref<1024xi32>>
          %elem11 = AIE.objectFifo.subview.access %subview11[0] : !AIE.objectFifoSubview<memref<1024xi32>> -> memref<1024xi32>
-         %subview9 = AIE.objectFifo.acquire @mmul_start_3___pC___mtbuffer_1___MTin(Produce, 1) : !AIE.objectFifoSubview<memref<2048xi32>>
-         %elem9 = AIE.objectFifo.subview.access %subview9[0] : !AIE.objectFifoSubview<memref<2048xi32>> -> memref<2048xi32>
+         %subview9 = AIE.objectFifo.acquire @mmul_start_3___pC___mtbuffer_1___MTin(Produce, 1) : !AIE.objectFifoSubview<memref<4096xi32>>
+         %elem9 = AIE.objectFifo.subview.access %subview9[0] : !AIE.objectFifoSubview<memref<4096xi32>> -> memref<4096xi32>
 
-         func.call @mmul_start(%elem5, %elem11, %elem9) : (memref<1024xi32>, memref<1024xi32>, memref<2048xi32>) -> ()
+         func.call @mmul_start(%elem5, %elem11, %elem9) : (memref<1024xi32>, memref<1024xi32>, memref<4096xi32>) -> ()
 
          AIE.objectFifo.release @mtbuffer_0___MTout___mmul_start_3___pA(Consume, 1)
          AIE.objectFifo.release @itbuffer_1__ITout(Consume, 1)
@@ -54,10 +54,10 @@ module  {
          %elem4 = AIE.objectFifo.subview.access %subview4[0] : !AIE.objectFifoSubview<memref<1024xi32>> -> memref<1024xi32>
          %subview11 = AIE.objectFifo.acquire @itbuffer_1__ITout(Consume, 1) : !AIE.objectFifoSubview<memref<1024xi32>>
          %elem11 = AIE.objectFifo.subview.access %subview11[0] : !AIE.objectFifoSubview<memref<1024xi32>> -> memref<1024xi32>
-         %subview8 = AIE.objectFifo.acquire @mmul_start_2___pC___mtbuffer_1___MTin(Produce, 1) : !AIE.objectFifoSubview<memref<2048xi32>>
-         %elem8 = AIE.objectFifo.subview.access %subview8[0] : !AIE.objectFifoSubview<memref<2048xi32>> -> memref<2048xi32>
+         %subview8 = AIE.objectFifo.acquire @mmul_start_2___pC___mtbuffer_1___MTin(Produce, 1) : !AIE.objectFifoSubview<memref<4096xi32>>
+         %elem8 = AIE.objectFifo.subview.access %subview8[0] : !AIE.objectFifoSubview<memref<4096xi32>> -> memref<4096xi32>
 
-         func.call @mmul_start(%elem4, %elem11, %elem8) : (memref<1024xi32>, memref<1024xi32>, memref<2048xi32>) -> ()
+         func.call @mmul_start(%elem4, %elem11, %elem8) : (memref<1024xi32>, memref<1024xi32>, memref<4096xi32>) -> ()
 
          AIE.objectFifo.release @mtbuffer_0___MTout___mmul_start_2___pA(Consume, 1)
          AIE.objectFifo.release @itbuffer_1__ITout(Consume, 1)
@@ -75,10 +75,10 @@ module  {
          %elem3 = AIE.objectFifo.subview.access %subview3[0] : !AIE.objectFifoSubview<memref<1024xi32>> -> memref<1024xi32>
          %subview11 = AIE.objectFifo.acquire @itbuffer_1__ITout(Consume, 1) : !AIE.objectFifoSubview<memref<1024xi32>>
          %elem11 = AIE.objectFifo.subview.access %subview11[0] : !AIE.objectFifoSubview<memref<1024xi32>> -> memref<1024xi32>
-         %subview7 = AIE.objectFifo.acquire @mmul_start_1___pC___mtbuffer_1___MTin(Produce, 1) : !AIE.objectFifoSubview<memref<2048xi32>>
-         %elem7 = AIE.objectFifo.subview.access %subview7[0] : !AIE.objectFifoSubview<memref<2048xi32>> -> memref<2048xi32>
+         %subview7 = AIE.objectFifo.acquire @mmul_start_1___pC___mtbuffer_1___MTin(Produce, 1) : !AIE.objectFifoSubview<memref<4096xi32>>
+         %elem7 = AIE.objectFifo.subview.access %subview7[0] : !AIE.objectFifoSubview<memref<4096xi32>> -> memref<4096xi32>
 
-         func.call @mmul_start(%elem3, %elem11, %elem7) : (memref<1024xi32>, memref<1024xi32>, memref<2048xi32>) -> ()
+         func.call @mmul_start(%elem3, %elem11, %elem7) : (memref<1024xi32>, memref<1024xi32>, memref<4096xi32>) -> ()
 
          AIE.objectFifo.release @mtbuffer_0___MTout___mmul_start_1___pA(Consume, 1)
          AIE.objectFifo.release @itbuffer_1__ITout(Consume, 1)
@@ -96,10 +96,10 @@ module  {
          %elem2 = AIE.objectFifo.subview.access %subview2[0] : !AIE.objectFifoSubview<memref<1024xi32>> -> memref<1024xi32>
          %subview11 = AIE.objectFifo.acquire @itbuffer_1__ITout(Consume, 1) : !AIE.objectFifoSubview<memref<1024xi32>>
          %elem11 = AIE.objectFifo.subview.access %subview11[0] : !AIE.objectFifoSubview<memref<1024xi32>> -> memref<1024xi32>
-         %subview6 = AIE.objectFifo.acquire @mmul_start_0___pC___mtbuffer_1___MTin(Produce, 1) : !AIE.objectFifoSubview<memref<2048xi32>>
-         %elem6 = AIE.objectFifo.subview.access %subview6[0] : !AIE.objectFifoSubview<memref<2048xi32>> -> memref<2048xi32>
+         %subview6 = AIE.objectFifo.acquire @mmul_start_0___pC___mtbuffer_1___MTin(Produce, 1) : !AIE.objectFifoSubview<memref<4096xi32>>
+         %elem6 = AIE.objectFifo.subview.access %subview6[0] : !AIE.objectFifoSubview<memref<4096xi32>> -> memref<4096xi32>
 
-         func.call @mmul_start(%elem2, %elem11, %elem6) : (memref<1024xi32>, memref<1024xi32>, memref<2048xi32>) -> ()
+         func.call @mmul_start(%elem2, %elem11, %elem6) : (memref<1024xi32>, memref<1024xi32>, memref<4096xi32>) -> ()
 
          AIE.objectFifo.release @mtbuffer_0___MTout___mmul_start_0___pA(Consume, 1)
          AIE.objectFifo.release @itbuffer_1__ITout(Consume, 1)
@@ -108,7 +108,7 @@ module  {
       AIE.end
    } { link_with="mmul_start.o" }
 
-func.func @sequence(%itbuffer_0 : memref<256x16xi32>,%itbuffer_1 : memref<64x16xi32>,%itbuffer_2 : memref<256x32xi32>) {
+func.func @sequence(%itbuffer_0 : memref<256x16xi32>,%itbuffer_1 : memref<64x16xi32>,%itbuffer_2 : memref<256x64xi32>) {
     %c0 = arith.constant 0 : i32
     %c1 = arith.constant 1 : i32
     %c16384 = arith.constant 16384 : i32
@@ -117,11 +117,10 @@ func.func @sequence(%itbuffer_0 : memref<256x16xi32>,%itbuffer_1 : memref<64x16x
     %c256 = arith.constant 256 : i32
     %c4096 = arith.constant 4096 : i32
     %c4 = arith.constant 4 : i32
-    %c32768 = arith.constant 32768 : i32
-    %c32 = arith.constant 32 : i32
+    %c65536 = arith.constant 65536 : i32
 
 
-    AIEX.ipu.dma_memcpy_nd(%c0, %c0,%itbuffer_2[%c0, %c0, %c0, %c0][%c1, %c1, %c256, %c32][%c0, %c0, %c0]){ metadata= @mtbuffer_1___MTout___itbuffer_2___ITin, id = 2 : i32 } :(i32, i32, memref<256x32xi32>, [i32,i32,i32,i32], [i32,i32,i32,i32], [i32,i32,i32])
+    AIEX.ipu.dma_memcpy_nd(%c0, %c0,%itbuffer_2[%c0, %c0, %c0, %c0][%c1, %c1, %c256, %c64][%c0, %c0, %c0]){ metadata= @mtbuffer_1___MTout___itbuffer_2___ITin, id = 2 : i32 } :(i32, i32, memref<256x64xi32>, [i32,i32,i32,i32], [i32,i32,i32,i32], [i32,i32,i32])
 
     AIEX.ipu.dma_memcpy_nd(%c0, %c0,%itbuffer_0[%c0, %c0, %c0, %c0][%c1, %c1, %c256, %c16][%c0, %c0, %c0]){ metadata= @itbuffer_0___ITout___mtbuffer_0___MTin, id = 0 : i32 } :(i32, i32, memref<256x16xi32>, [i32,i32,i32,i32], [i32,i32,i32,i32], [i32,i32,i32])
 

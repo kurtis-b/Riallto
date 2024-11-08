@@ -50,16 +50,16 @@ def execute():
     # Create an instance of the applicaiton
     kernel_src = Path(__file__).parent.parent / "mmul_start.cc"
     kernel_src = str(kernel_src)
-    kernel = generate_kernel_start(kernel_src, (64, 64), (64, 64), np.uint8, np.uint16)
+    kernel = generate_kernel_start(kernel_src, (64, 64), (64, 64), np.int8, np.int32)
     app_builder = Mmul_1aie(kernel)
 
     # Trace the callgraph
     npu_mtxa_shape = (64, 64)
     npu_mtxb_shape = (64, 64)
     npu_mtxc_shape = (64, 64)
-    mtx_a = np.zeros(shape=(npu_mtxa_shape[0], npu_mtxa_shape[1]), dtype=np.uint8)
-    mtx_b = np.zeros(shape=(npu_mtxb_shape[0], npu_mtxb_shape[1]), dtype=np.uint8)
-    mtx_c = np.zeros(shape=(npu_mtxc_shape[0], npu_mtxc_shape[1]), dtype=np.uint16)
+    mtx_a = np.zeros(shape=(npu_mtxa_shape[0], npu_mtxa_shape[1]), dtype=np.int8)
+    mtx_b = np.zeros(shape=(npu_mtxb_shape[0], npu_mtxb_shape[1]), dtype=np.int8)
+    mtx_c = np.zeros(shape=(npu_mtxc_shape[0], npu_mtxc_shape[1]), dtype=np.int32)
 
     # Generate the MLIR file
     app_builder.previous_build_args = (mtx_a, mtx_b, mtx_c)
