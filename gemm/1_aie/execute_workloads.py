@@ -1,13 +1,11 @@
 from pathlib import Path
-import workloads
-from workloads import WORKLOADS
-from generate_base_mlir import Mmul_1aie
+from workloads import WORKLOADS, APP_NAME, FILE_NAME_KEY, DIRECTORY_KEY, DATA_TYPE_INPUT_KEY, DATA_TYPE_OUTPUT_KEY, WORKLOAD_SHAPES_KEY, NPU_SHAPES_KEY, KERNEL_SHAPES_KEY, KERNEL_MMUL_CONFIG_KEY
+from workloads import INP_DTYPES as inp_dtypes, OUT_DTYPES as out_dtypes
 from ml_dtypes import bfloat16
 from npu.runtime import AppRunner
 import numpy as np
 import time
 import matplotlib.pyplot as plt
-from npu import nputop
 
 def partition_matrix(matrix, tile_size):
     rows, cols = matrix.shape
@@ -20,47 +18,59 @@ def partition_matrix(matrix, tile_size):
 
 def execute():
     num_runs = 10
-    performance_file = Path(__file__).parent / "actual_performance.txt"
+    performance_file = Path(__file__).parent / "actual_performance.csv"
     with open(performance_file, "w") as f:
+        f.write("# AIEs,Data Type,Application Workload,NPU Workload,Kernel Workload,CPU,NPU Execution Only,NPU Execution + DDR Transfer\n")
         for workload in WORKLOADS:
-            workload_dir = Path(__file__).parent / workload[workloads.DIRECTORY_KEY]
-            new_xclbin_name = f"{workloads.APP_NAME}_{workload[workloads.FILE_NAME_KEY].split('.mlir')[0]}.xclbin"
-            new_seq_name = f"{workloads.APP_NAME}_{workload[workloads.FILE_NAME_KEY].split('.mlir')[0]}.seq"
+            workload_dir = Path(__file__).parent / workload[DIRECTORY_KEY]
+            new_xclbin_name = f"{APP_NAME}_{workload[FILE_NAME_KEY].split('.mlir')[0]}.xclbin"
+            new_seq_name = f"{APP_NAME}_{workload[FILE_NAME_KEY].split('.mlir')[0]}.seq"
             new_xclbin = workload_dir / new_xclbin_name
             new_seq = workload_dir / new_seq_name
             app = AppRunner(str(new_xclbin), fw_sequence=str(new_seq))
 
             # Allocate app input and output buffers to exchange data with NPU
-            a_shape_npu = workload[workloads.NPU_SHAPES_KEY][0]
-            b_shape_npu = workload[workloads.NPU_SHAPES_KEY][1]
-            c_shape_npu = workload[workloads.NPU_SHAPES_KEY][2]
-            inp_dtype = np.uint8 if workload[workloads.DATA_TYPE_INPUT_KEY] == 'uint8' else bfloat16
-            out_dtype = np.uint16 if workload[workloads.DATA_TYPE_OUTPUT_KEY] == 'i16' else np.float32
+            a_shape_npu = workload[NPU_SHAPES_KEY][0]
+            b_shape_npu = workload[NPU_SHAPES_KEY][1]
+            c_shape_npu = workload[NPU_SHAPES_KEY][2]
+            inp_dtype = inp_dtypes[workload[DATA_TYPE_INPUT_KEY]]
+            out_dtype = out_dtypes[workload[DATA_TYPE_OUTPUT_KEY]]
+            inp_dtype_host = inp_dtypes[workload[DATA_TYPE_INPUT_KEY]]
             # NOTE: If I use np.float16, as the dtype for the input buffers, the NPU output will be all 0's
+            if inp_dtype_host == bfloat16:
+                inp_dtype_host = np.float16
             input_a = app.allocate(shape=a_shape_npu, dtype=inp_dtype)
             input_b = app.allocate(shape=b_shape_npu, dtype=inp_dtype)
             output_c = app.allocate(shape=c_shape_npu, dtype=out_dtype)
 
             # Load array into input buffer
-            a_shape_workload = workload[workloads.WORKLOAD_SHAPES_KEY][0]
-            b_shape_workload = workload[workloads.WORKLOAD_SHAPES_KEY][1]
-            c_shape_workload = workload[workloads.WORKLOAD_SHAPES_KEY][2]
-            # b = np.zeros(shape=b_shape_workload, dtype=inp_dtype)
-            # for i in range(min(b_shape_workload[0], b_shape_workload[1])):
-            #     b[i][i] = i % 255
-            inp_dtype_host = np.uint8 if workload[workloads.DATA_TYPE_INPUT_KEY] == 'uint8' else np.float16
-            b = np.ones(shape=b_shape_workload, dtype=inp_dtype_host)
+            a_shape_workload = workload[WORKLOAD_SHAPES_KEY][0]
+            b_shape_workload = workload[WORKLOAD_SHAPES_KEY][1]
+            c_shape_workload = workload[WORKLOAD_SHAPES_KEY][2]
+            b = np.zeros(shape=b_shape_workload, dtype=inp_dtype)
             a = np.ones(shape=a_shape_workload, dtype=inp_dtype_host)
             c = np.zeros(shape=c_shape_workload, dtype=out_dtype)
+            if 'i' in workload[DATA_TYPE_INPUT_KEY] or 'u' in workload[DATA_TYPE_INPUT_KEY]:
+                max_value = np.iinfo(a.dtype).max
+                a.fill(max_value)
+                max_value = np.iinfo(b.dtype).max
+                b.fill(max_value)
+            elif 'f' in workload[DATA_TYPE_INPUT_KEY]:
+                max_value = np.iinfo(np.int16).max
+                a.fill(max_value)
+                max_value = np.iinfo(np.int16).max
+                b.fill(max_value)
+            else:
+                raise ValueError(f"Unknown data type: {workload[DATA_TYPE_INPUT_KEY]}")
             total_npu_time = 0.0
             total_npu_time_plus_ddr_transfer = 0.0
 
-            M = workload[workloads.KERNEL_MMUL_CONFIG_KEY][0]
-            K = workload[workloads.KERNEL_MMUL_CONFIG_KEY][1]
-            N = workload[workloads.KERNEL_MMUL_CONFIG_KEY][2]
+            M = workload[KERNEL_MMUL_CONFIG_KEY][0]
+            K = workload[KERNEL_MMUL_CONFIG_KEY][1]
+            N = workload[KERNEL_MMUL_CONFIG_KEY][2]
             for run in range(num_runs):
                 c = np.zeros(shape=c_shape_workload, dtype=out_dtype) # Reset output matrix c to zeros
-                expected_output = np.zeros(shape=c_shape_workload, dtype=out_dtype) # Reset expected output matrix to zeros
+                c_tiled = np.zeros(shape=c_shape_npu, dtype=out_dtype)
                 for row_a in range(0, a_shape_workload[0], a_shape_npu[0]):
                     for col_b in range(0, b_shape_workload[1], b_shape_npu[1]):
                         for col_a in range(0, a_shape_workload[1], a_shape_npu[1]):
@@ -88,15 +98,17 @@ def execute():
                             start = time.time()
                             output_c.sync_from_npu()
                             total_npu_time_plus_ddr_transfer = total_npu_time_plus_ddr_transfer + (time.time() - start)
-                            c[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] = c[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] + output_c
-                            expected_output[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] = expected_output[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] + partition_matrix(a[row_a:row_a+a_shape_npu[0],col_a:col_a+a_shape_npu[1]]@b[col_a:col_a+a_shape_npu[1],col_b:col_b+b_shape_npu[1]], (M,N))
+                            c_tiled = output_c[:]
+                            c_tiled = c_tiled.reshape(a_shape_npu[0] // M, M, b_shape_npu[1] // N, N).swapaxes(1, 2).reshape(a_shape_npu[0], b_shape_npu[1])
+                            c[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] = c[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] + c_tiled
                 print(f"Finished NPU run {run}")
 
             # Otain the CPU calculation time
+            expected_output = np.zeros(shape=c_shape_workload, dtype=out_dtype) # Reset expected output matrix to zeros
             total_cpu_time = 0.0
             for run in range(num_runs):
                 start = time.time()
-                test=a@b
+                expected_output = np.matmul(a, b, dtype=out_dtype)
                 total_cpu_time = total_cpu_time + (time.time() - start)
                 print(f"Finished CPU run {run}")
 
@@ -128,18 +140,9 @@ def execute():
             print(f'total cpu calculation time={total_cpu_time}')
 
             # Write the application performance to a file
-            f.write(f"Input data type: {inp_dtype}\n")
-            f.write(f"Output data type: {out_dtype}\n")
-            f.write(f"Workload: {workload[workloads.WORKLOAD_SHAPES_KEY]}\n")
-            f.write(f"NPU workload={workload[workloads.NPU_SHAPES_KEY]}\n")
-            f.write(f"Kernel workload={workload[workloads.KERNEL_SHAPES_KEY]}\n")
-            f.write(f"Kernel configuration={workload[workloads.KERNEL_MMUL_CONFIG_KEY]}\n")
-            f.write(f"Total NPU calculation time={total_npu_time}\n")
-            f.write(f"Total NPU calculation time + DDR transfer overhead={total_npu_time_plus_ddr_transfer}\n")
-            f.write(f"Total CPU calculation time={total_cpu_time}\n")
-            f.write("\n")
+            f.write(f"{1},{inp_dtype},{workload[WORKLOAD_SHAPES_KEY]},{workload[NPU_SHAPES_KEY]},{workload[KERNEL_SHAPES_KEY]},{total_cpu_time},{total_npu_time},{total_npu_time_plus_ddr_transfer}\n")
                 
-            del app
+        del app
 
 
 if __name__ == "__main__":

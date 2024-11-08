@@ -1,32 +1,32 @@
 #include <aie_api/aie.hpp>
 extern "C"
 {
-    void mmul_accum(uint8_t *__restrict pA, uint8_t *__restrict pB, uint16_t *pAccum, uint16_t *__restrict pC)
+    void mmul_start(bfloat16 *__restrict pA, bfloat16 *__restrict pB, uint32_t *__restrict pC)
     {
+        const int shift = 0;
         const int M = 8;
         const int K = 8;
         const int N = 4;
-        const int rowA = 64 / M;
-        const int colA = 64 / K;
-        const int colB = 64 / N;
-        using MMUL = ::aie::mmul<M, K, N, uint8_t, uint8_t>;
+        const int rowA = 8 / M;
+        const int colA = 128 / K;
+        const int colB = 32 / N;
+        using MMUL = ::aie::mmul<M, K, N, bfloat16, bfloat16, acc32>;
 
         for (unsigned z = 0; z < rowA; z += 1)
             chess_prepare_for_pipelining
             {
-                uint16_t *__restrict pC1 = pC + (z * colB + 0) * MMUL::size_C;
-                uint16_t *__restrict pAccum1 = pAccum + (z * colB + 0) * MMUL::size_C;
+                uint32_t *__restrict pC1 = pC + (z * colB + 0) * MMUL::size_C;
                 for (unsigned j = 0; j < colB; j += 2)
                     chess_prepare_for_pipelining
                     {
-                        const uint8_t *__restrict pA1 = pA + (z * colA + 0) * MMUL::size_A;
-                        const uint8_t *__restrict pB1 = pB + (0 * colB + j) * MMUL::size_B;
-                        const uint8_t *__restrict pB2 = pB + (0 * colB + (j + 1)) * MMUL::size_B;
-                        ::aie::vector<uint8_t, MMUL::size_A> A0 = ::aie::load_v<MMUL::size_A>(pA1);
+                        const bfloat16 *__restrict pA1 = pA + (z * colA + 0) * MMUL::size_A;
+                        const bfloat16 *__restrict pB1 = pB + (0 * colB + j) * MMUL::size_B;
+                        const bfloat16 *__restrict pB2 = pB + (0 * colB + (j + 1)) * MMUL::size_B;
+                        ::aie::vector<bfloat16, MMUL::size_A> A0 = ::aie::load_v<MMUL::size_A>(pA1);
                         pA1 += MMUL::size_A;
-                        ::aie::vector<uint8_t, MMUL::size_B> B0 = ::aie::load_v<MMUL::size_B>(pB1);
+                        ::aie::vector<bfloat16, MMUL::size_B> B0 = ::aie::load_v<MMUL::size_B>(pB1);
                         pB1 += MMUL::size_B * colB;
-                        ::aie::vector<uint8_t, MMUL::size_B> B1 = ::aie::load_v<MMUL::size_B>(pB2);
+                        ::aie::vector<bfloat16, MMUL::size_B> B1 = ::aie::load_v<MMUL::size_B>(pB2);
                         pB2 += MMUL::size_B * colB;
 
                         MMUL C00;
@@ -48,9 +48,9 @@ extern "C"
                                 C01.mac(A0, B1);
                             }
 
-                        ::aie::store_v(pC1, ::aie::add(::aie::load_v<MMUL::size_C>(pAccum1), C00.template to_vector<uint16_t>()));
+                        ::aie::store_v(pC1, C00.template to_vector<uint32_t>(shift));
                         pC1 += MMUL::size_C;
-                        ::aie::store_v(pC1, ::aie::add(::aie::load_v<MMUL::size_C>(pAccum1), C01.template to_vector<uint16_t>()));
+                        ::aie::store_v(pC1, C01.template to_vector<uint32_t>(shift));
                         pC1 += MMUL::size_C;
                     }
             }

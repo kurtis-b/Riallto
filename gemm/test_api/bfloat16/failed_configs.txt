@@ -1,0 +1,6 @@
+Workload: 1kx1kx1k.mlir, M: 4, K: 16, N: 8, Input Data Type: bfloat16, Output Data Type: float
+Workload: 1kx1kx1k.mlir, M: 8, K: 8, N: 4, Input Data Type: bfloat16, Output Data Type: double
+Workload: 1kx1kx1k.mlir, M: 4, K: 8, N: 4, Input Data Type: bfloat16, Output Data Type: double
+Workload: 1kx1kx1k.mlir, M: 4, K: 16, N: 8, Input Data Type: bfloat16, Output Data Type: double
+Workload: 8x4kx4k.mlir, M: 8, K: 8, N: 4, Input Data Type: uint8_t, Output Data Type: uint16_t
+Workload: 8x4kx4k.mlir, M: 8, K: 8, N: 4, Input Data Type: bfloat16, Output Data Type: uint32_t

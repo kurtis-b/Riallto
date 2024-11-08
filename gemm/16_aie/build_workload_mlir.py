@@ -2,19 +2,46 @@ from npu.build.appxclbinbuilder import AppXclbinBuilder
 from workloads import WORKLOADS
 from workloads import APP_NAME, DIRECTORY_KEY, FILE_NAME_KEY, KERNEL_SHAPES_KEY, DATA_TYPE_INPUT_KEY, DATA_TYPE_OUTPUT_KEY, KERNEL_MMUL_CONFIG_KEY
 from workloads import INP_DATATYPES as inp_datatypes, OUT_DATATYPES as out_datatypes, ACC_TYPES as acc_types, INP_DTYPES as inp_dtypes, OUT_DTYPES as out_dtypes
-from generate_base_mlir import generate_kernel_start, generate_kernel_accum, generate_kernel_end
 from ml_dtypes import bfloat16
+from npu.build.kernel import Kernel
 from pathlib import Path
+import numpy as np
 import os
 import re
 import shutil
+
+
+def generate_kernel_start(kernel_src: str, kernel_mtxa_shape: tuple, kernel_mtxb_shape: tuple, inp_dtype, out_dtype) -> Kernel:
+    def fx_behavior(invobj):
+        invobj.pA.array = np.ndarray(shape=kernel_mtxa_shape, dtype=inp_dtype)
+        invobj.pB.array = np.ndarray(shape=kernel_mtxb_shape, dtype=inp_dtype)
+        invobj.pC.array = np.ndarray(shape=(kernel_mtxa_shape[0], kernel_mtxb_shape[1]), dtype=out_dtype)
+    return Kernel(kernel_src, behavioralfx=fx_behavior, requires_boilerplate=True)
+
+
+def generate_kernel_accum(kernel_src: str, kernel_mtxa_shape: tuple, kernel_mtxb_shape: tuple, inp_dtype, out_dtype) -> Kernel:
+    def fx_behavior(invobj):
+        invobj.pA.array = np.ndarray(shape=kernel_mtxa_shape, dtype=inp_dtype)
+        invobj.pB.array = np.ndarray(shape=kernel_mtxb_shape, dtype=inp_dtype)
+        invobj.pAccum.array = np.ndarray(shape=(kernel_mtxa_shape[0], kernel_mtxb_shape[1]), dtype=out_dtype)
+        invobj.pC.array = np.ndarray(shape=(kernel_mtxa_shape[0], kernel_mtxb_shape[1]), dtype=out_dtype)
+    return Kernel(kernel_src, behavioralfx=fx_behavior, requires_boilerplate=True)
+
+
+def generate_kernel_end(kernel_src: str, kernel_mtxa_shape: tuple, kernel_mtxb_shape: tuple, inp_dtype, out_dtype) -> Kernel:
+    def fx_behavior(invobj):
+        invobj.pA.array = np.ndarray(shape=kernel_mtxa_shape, dtype=inp_dtype)
+        invobj.pB.array = np.ndarray(shape=kernel_mtxb_shape, dtype=inp_dtype)
+        invobj.pAccum.array = np.ndarray(shape=(kernel_mtxa_shape[0], kernel_mtxb_shape[1]), dtype=out_dtype)
+        invobj.pC.array = np.ndarray(shape=(kernel_mtxa_shape[0], kernel_mtxb_shape[1]), dtype=out_dtype)
+    return Kernel(kernel_src, behavioralfx=fx_behavior, requires_boilerplate=True)
 
 
 def execute():
     # Create the xclbin from the kernel source and MLIR file for each workload
     for workload in WORKLOADS:
         # Create an instance of the application
-        kernel_src = [Path(__file__).parent.parent / "mmul_start.cc", Path(__file__).parent.parent / "mmul_start.cc", Path(__file__).parent.parent / "mmul_start.cc", Path(__file__).parent.parent / "mmul_start.cc"]
+        kernel_src = [Path(__file__).parent.parent / "mmul_start.cc", Path(__file__).parent.parent / "mmul_accum.cc", Path(__file__).parent.parent / "mmul_accum.cc", Path(__file__).parent.parent / "mmul_end.cc"]
         kernels = []
         for src in kernel_src:
             # Read the kernel source file and replace the data types based on the workload
