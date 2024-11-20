@@ -3,7 +3,7 @@ from pathlib import Path
 from npu.build.kernel import Kernel
 from npu.build.appbuilder import AppBuilder
 from npu.build.itkernel import ITWrite, ITRead
-from npu.build.mtkernel import MTSplit, MTConcat
+from npu.build.mtkernel import MTSplit, MTConcat, MTPassThrough
 from ml_dtypes import bfloat16
 import workloads
 
@@ -26,7 +26,7 @@ class Mmul_4aie(AppBuilder):
         # then generate a generic MLIR file that splits the matrix in the first dimension. Using that file,
         # make changes as necessary so that the MLIR instead reflects the split in the second dimension, 
         # and use that file to generate the MLIR files specific to the workload.
-        input_b = ITRead(mtx_b)
+        input_b = MTPassThrough(mtx_b)
         input_a = MTSplit(mtx_a, 4)
         output_mtxs = [k(x, input_b)
                   for k, x in zip([self.kernel_list[i] for i in range(4)], input_a)]
