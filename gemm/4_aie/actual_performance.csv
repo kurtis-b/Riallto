@@ -1,5 +1,30 @@
-# AIEs,Data Type,Application Workload,NPU Workload,Kernel Workload,CPU,NPU Execution Only,NPU Execution + DDR Transfer
-4,<class 'numpy.int8'>,[(1024, 1024), (1024, 1024), (1024, 1024)],[(64, 64), (64, 256), (64, 256)],[(64, 64), (64, 64), (64, 64)],5.708152341842651,0.3318966865539551,0.35975167751312254
-4,<class 'ml_dtypes.bfloat16'>,[(1024, 1024), (1024, 1024), (1024, 1024)],[(32, 32), (32, 128), (32, 128)],[(32, 32), (32, 32), (32, 32)],0.005951356887817383,2.416882634162903,2.687906813621521
-4,<class 'numpy.int8'>,[(8, 4096), (4096, 4096), (8, 4096)],[(8, 256), (256, 256), (8, 256)],[(8, 256), (256, 64), (8, 64)],1.290785789489746,0.07898900508880616,0.0928922414779663
-4,<class 'ml_dtypes.bfloat16'>,[(8, 4096), (4096, 4096), (8, 4096)],[(8, 256), (256, 128), (8, 128)],[(8, 256), (256, 32), (8, 32)],0.019809913635253907,0.16011447906494142,0.18588416576385497
+# AIEs,Input Data Type, Output Data Type,Application Workload,NPU Workload,Kernel Workload,NPU Execution (ms),NPU Execution + DDR Transfer (ms)
+4,<class 'numpy.int8'>,<class 'numpy.int32'>,1024x1024x1024,64x64x256,64x64x64,314.7547960281372,349.79279041290283
+4,<class 'ml_dtypes.bfloat16'>,<class 'numpy.float32'>,1024x1024x1024,32x32x128,32x32x32,2401.756525039673,2545.9532976150513
+4,<class 'numpy.int8'>,<class 'numpy.int32'>,8x4096x4096,8x256x256,8x256x64,69.7089672088623,88.539719581604
+4,<class 'ml_dtypes.bfloat16'>,<class 'numpy.float32'>,8x4096x4096,8x256x128,8x256x32,117.33088493347168,132.7167272567749
+4,<class 'numpy.int8'>,<class 'numpy.int8'>,1024x1024x1024,64x64x256,64x64x64,321.2120532989502,346.6695785522461
+4,<class 'ml_dtypes.bfloat16'>,<class 'ml_dtypes.bfloat16'>,1024x1024x1024,32x32x128,32x32x32,2423.179006576538,2577.0546197891235
+4,<class 'numpy.int8'>,<class 'numpy.int8'>,8x4096x4096,8x256x256,8x256x64,46.28410339355469,78.7132740020752
+4,<class 'ml_dtypes.bfloat16'>,<class 'ml_dtypes.bfloat16'>,8x4096x4096,8x256x128,8x256x32,96.66690826416016,109.98971462249756
+4,<class 'numpy.int8'>,<class 'numpy.int32'>,1024x1024x1024,32x128x256,32x128x64,312.8405570983887,335.07869243621826
+4,<class 'ml_dtypes.bfloat16'>,<class 'numpy.float32'>,1024x1024x1024,32x64x256,32x64x64,601.2257814407349,636.2663984298706
+4,<class 'numpy.int8'>,<class 'numpy.int32'>,8x4096x4096,8x512x64,8x512x16,145.89810371398926,172.97868728637695
+4,<class 'ml_dtypes.bfloat16'>,<class 'numpy.float32'>,8x4096x4096,8x256x64,8x256x16,286.5633010864258,353.994083404541
+4,<class 'numpy.int8'>,<class 'numpy.int8'>,1024x1024x1024,32x128x256,32x128x64,319.63815689086914,339.6291494369507
+4,<class 'ml_dtypes.bfloat16'>,<class 'ml_dtypes.bfloat16'>,1024x1024x1024,32x64x256,32x64x64,657.8701972961426,721.7385768890381
+4,<class 'numpy.int8'>,<class 'numpy.int8'>,8x4096x4096,8x512x64,8x512x16,163.59925270080566,187.67244815826416
+4,<class 'ml_dtypes.bfloat16'>,<class 'ml_dtypes.bfloat16'>,8x4096x4096,8x256x64,8x256x16,319.80738639831543,367.87891387939453
+4,<class 'numpy.uint8'>,<class 'numpy.uint8'>,1024x1024x1024,32x128x256,32x128x64,309.3661308288574,327.44011878967285
+4,<class 'numpy.uint8'>,<class 'numpy.uint8'>,8x4096x4096,8x512x64,8x512x16,143.44890117645264,179.23693656921387
+Input Data Type, Output Data Type,Application Workload,CPU Execution Time (ms)
+<class 'numpy.int8'>,<class 'numpy.int32'>,1024x1024x1024,7173.128414154053
+<class 'numpy.float16'>,<class 'numpy.float32'>,1024x1024x1024,14.40131664276123
+<class 'numpy.int8'>,<class 'numpy.int32'>,8x4096x4096,1238.2744789123535
+<class 'numpy.float16'>,<class 'numpy.float32'>,8x4096x4096,43.988680839538574
+<class 'numpy.int8'>,<class 'numpy.int8'>,1024x1024x1024,1872.5175142288208
+<class 'numpy.float16'>,<class 'numpy.float16'>,1024x1024x1024,5690.12770652771
+<class 'numpy.int8'>,<class 'numpy.int8'>,8x4096x4096,786.1766338348389
+<class 'numpy.float16'>,<class 'numpy.float16'>,8x4096x4096,1857.3823690414429
+<class 'numpy.uint8'>,<class 'numpy.uint8'>,1024x1024x1024,1866.8323516845703
+<class 'numpy.uint8'>,<class 'numpy.uint8'>,8x4096x4096,789.6695375442505

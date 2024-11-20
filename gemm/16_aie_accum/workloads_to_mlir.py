@@ -75,10 +75,10 @@ def replace_sequence_memref(line, shapes):
         return prefix + ','.join([f'%itbuffer_{i} : {memref}' for i, memref in enumerate(memrefs)]) + ')'
     return re.sub(pattern, replacement, line)
 
-def replace_sequence_sizes(line, shapes):
+def replace_sequence_sizes(line, shapes, offset):
     # The first array is for the offsets. Using that to find the location of the size operands
-    pattern = r'\[%c0, %c0, %c0, %c0\]\[(%c\d+), (%c\d+), (%c\d+), (%c\d+)\]'
-    new_shape = f'[%c0, %c0, %c0, %c0][%c1, %c1, %c{shapes[0]}, %c{shapes[1]}]'
+    pattern = r'\[%c0, %c0, %c0, (%c\d+)\]\[(%c\d+), (%c\d+), (%c\d+), (%c\d+)\]\[%c0, %c0, (%c\d+)\]'
+    new_shape = rf'[%c0, %c0, %c0, %c{shapes[1]//4*offset}][%c1, %c1, %c{shapes[0]}, %c{shapes[1]//4}][%c0, %c0, %c{shapes[1]}]'
     line = re.sub(pattern, new_shape, line, count=1)
     return line
 
@@ -155,7 +155,7 @@ def process_mlir_file(input_file, output_file, inp_dtype, out_dtype, npu_shapes,
                                     raise ValueError(f"The buffer indexes are not the same for line: {line}")
                                 if idx == -1:
                                     raise ValueError(f"The buffer index is -1 for line: {line}")
-                                line = replace_memref(line, npu_shapes[idx])
+                                line = replace_memref(line, (npu_shapes[idx][0], npu_shapes[idx][1] // 4)) # Divide by 4 here since the NPU inputs will be split across 4 rows or 4 columns
                             # Handle kernel shapes
                             else:
                                 mtbuf_idx = int(line[line.find('mtbuffer_')+len('mtbuffer_')])
@@ -176,24 +176,33 @@ def process_mlir_file(input_file, output_file, inp_dtype, out_dtype, npu_shapes,
         file.write(line)
         line = next(line_iter, None)
         while line is not None:
-            if 'memref' in line:
+            if 'memref' in line and 'itbuffer' in line:
                 line = replace_2d_memref(line, npu_shapes)
-                if 'itbuffer_0' in line:
-                    line = replace_sequence_sizes(line, npu_shapes[0])
-                elif 'itbuffer_1' in line:
-                    line = replace_sequence_sizes(line, npu_shapes[1])
-                elif 'itbuffer_2' in line:
-                    line = replace_sequence_sizes(line, npu_shapes[2])
-            if 'arith.constant' in line:
+                shape_idx =  int(line[line.find('itbuffer_')+len('itbuffer_')])
+                if shape_idx == 0 or shape_idx == 1:
+                    itbuf_idx = int(line[line.find('ITout_')+len('ITout_')])
+                    mtbuf_idx = int(line[line.find('MTin_')+len('MTin_')])
+                    if itbuf_idx == -1 or mtbuf_idx == -1 or itbuf_idx != mtbuf_idx:
+                        raise ValueError(f"The buffer index is incorrect for line: {line}")
+                elif shape_idx == 2:
+                    itbuf_idx = int(line[line.find('ITin_')+len('ITin_')])
+                    if itbuf_idx == -1:
+                        raise ValueError(f"The buffer index is -1 for line: {line}")
+                else:
+                    raise ValueError(f"Invalid shape index: {shape_idx}")
+                line = replace_sequence_sizes(line, npu_shapes[shape_idx], itbuf_idx)
+            elif 'arith.constant' in line:
                 ssa_consts.append(line[line.index('c')+1:line.index('=')].strip())
             file.write(line)
             line = next(line_iter, None)
     # Check if all the SSA constants needed are in the file
     required_ssa_consts_kernel = {f'{dim}' for shape in kernel_shapes for dim in shape}
     required_ssa_consts_npu = {f'{dim}' for shape in npu_shapes for dim in shape}
-    missing_ssa_consts_kernel = required_ssa_consts_kernel - set(ssa_consts)
-    missing_ssa_consts_npu = required_ssa_consts_npu - set(ssa_consts) - missing_ssa_consts_kernel
-    if missing_ssa_consts_kernel or missing_ssa_consts_npu:
+    required_ssa_consts_offsets = {f'{shape[1]//4*i}' for shape in npu_shapes for i in range(4)}
+    missing_ssa_consts_offsets = required_ssa_consts_offsets - set(ssa_consts)
+    missing_ssa_consts_kernel = required_ssa_consts_kernel - set(ssa_consts) - missing_ssa_consts_offsets
+    missing_ssa_consts_npu = required_ssa_consts_npu - set(ssa_consts) - missing_ssa_consts_kernel - missing_ssa_consts_offsets
+    if missing_ssa_consts_kernel or missing_ssa_consts_npu or missing_ssa_consts_offsets:
         with open(output_file, 'r+') as file:
             lines = file.readlines()
             file.seek(0)
@@ -205,6 +214,8 @@ def process_mlir_file(input_file, output_file, inp_dtype, out_dtype, npu_shapes,
                     for const in missing_ssa_consts_kernel:
                         file.write(f'    %c{const} = arith.constant {const} : i32\n')
                     for const in missing_ssa_consts_npu:
+                        file.write(f'    %c{const} = arith.constant {const} : i32\n')
+                    for const in missing_ssa_consts_offsets:
                         file.write(f'    %c{const} = arith.constant {const} : i32\n')
                     sequence_found = False
                 file.write(line)
