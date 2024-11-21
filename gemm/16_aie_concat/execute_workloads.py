@@ -114,8 +114,9 @@ def execute():
                             total_npu_time_plus_ddr_transfer = total_npu_time_plus_ddr_transfer + (time.time() - start)                            
                             c_tiled = output_c[:]
                             for i in range(b_shape_npu[1] // b_shape_kernel[1]):
-                                c_tiled[0:a_shape_npu[0],i*b_shape_kernel[1]:(i+1)*b_shape_kernel[1]] = partition_matrix(c_tiled[0:a_shape_npu[0],i*b_shape_kernel[1]:(i+1)*b_shape_kernel[1]], (M, N))
-                            c[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] = c[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] + c_tiled
+                                for j in range(c_shape_npu[0] // a_shape_kernel[0]):
+                                    c_tiled[j*a_shape_kernel[0]:(j+1)*a_shape_kernel[0],i*b_shape_kernel[1]:(i+1)*b_shape_kernel[1]] = partition_matrix(c_tiled[j*a_shape_kernel[0]:(j+1)*a_shape_kernel[0],i*b_shape_kernel[1]:(i+1)*b_shape_kernel[1]], (M, N))
+                                c[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] = c[row_a:row_a+a_shape_npu[0],col_b:col_b+b_shape_npu[1]] + c_tiled[j*a_shape_kernel[0]:(j+1)*a_shape_kernel[0],0:b_shape_npu[1]]
                 print(f"Finished NPU run {run}")
             total_npu_time = (total_npu_time / num_runs) * 1e3
             total_npu_time_plus_ddr_transfer = (total_npu_time_plus_ddr_transfer / num_runs) * 1e3
